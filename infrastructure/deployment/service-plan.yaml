@@ -1,0 +1,25 @@
+image:
+  dockerfile: infrastructure/docker/Dockerfile
+
+services:
+  api:
+    command: pnpm start:api
+    health_check_path: /health
+    continuous: true
+
+schedules:
+  ingestion:
+    command: pnpm start:ingestion
+    cron: "*/15 * * * *"
+  intelligence:
+    command: pnpm start:intelligence
+    cron: "* * * * *"
+  generation:
+    command: pnpm start:generation
+    cron: "* * * * *"
+  delivery:
+    command: pnpm start:delivery
+    cron: "* * * * *"
+
+release:
+  command: pnpm migrate:production

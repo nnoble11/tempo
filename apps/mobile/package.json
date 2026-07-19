@@ -7,7 +7,8 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
-    "ios": "expo start --ios"
+    "ios": "expo start --ios",
+    "eas-build-post-install": "cd ../.. && pnpm --filter @tempo/contracts build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.7",

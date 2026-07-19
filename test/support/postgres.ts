@@ -1,15 +1,61 @@
 import { execFile } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
+import { Client } from "pg";
+
 const execFileAsync = promisify(execFile);
 
 export type TestPostgres = {
   connectionString: string;
   stop(): Promise<void>;
+};
+
+const quotedIdentifier = (value: string): string =>
+  `"${value.replaceAll('"', '""')}"`;
+
+const startConfiguredTestPostgres = async (
+  configuredUrl: string,
+): Promise<TestPostgres> => {
+  const databaseName = `tempo_test_${randomUUID().replaceAll("-", "")}`;
+  const adminUrl = new URL(configuredUrl);
+  adminUrl.pathname = "/postgres";
+  const adminConnectionString = adminUrl.toString();
+  const admin = new Client({ connectionString: adminConnectionString });
+  await admin.connect();
+  try {
+    await admin.query(`CREATE DATABASE ${quotedIdentifier(databaseName)}`);
+  } finally {
+    await admin.end();
+  }
+
+  const testUrl = new URL(configuredUrl);
+  testUrl.pathname = `/${databaseName}`;
+  let stopped = false;
+  return {
+    connectionString: testUrl.toString(),
+    stop: async () => {
+      if (stopped) {
+        return;
+      }
+      stopped = true;
+      const cleanup = new Client({
+        connectionString: adminConnectionString,
+      });
+      await cleanup.connect();
+      try {
+        await cleanup.query(
+          `DROP DATABASE IF EXISTS ${quotedIdentifier(databaseName)} WITH (FORCE)`,
+        );
+      } finally {
+        await cleanup.end();
+      }
+    },
+  };
 };
 
 const findAvailablePort = async (): Promise<number> =>
@@ -36,10 +82,7 @@ const findAvailablePort = async (): Promise<number> =>
 export const startTestPostgres = async (): Promise<TestPostgres> => {
   const configuredUrl = process.env.TEST_DATABASE_URL;
   if (configuredUrl !== undefined) {
-    return {
-      connectionString: configuredUrl,
-      stop: async () => undefined,
-    };
+    return startConfiguredTestPostgres(configuredUrl);
   }
 
   const dataDirectory = await mkdtemp(join(tmpdir(), "tempo-postgres-"));

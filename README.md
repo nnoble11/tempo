@@ -96,6 +96,9 @@ test-only PostgreSQL/Supabase project, run `pnpm test:env:bootstrap`, and then
 run `pnpm test:env:start`. The bootstrap creates one fixed test identity,
 interest, source item, grounded story, and briefing; rerunning it is idempotent.
 See the [test-environment runbook](./docs/runbooks/test-environment.md).
+Container commands, scheduler cadence, environment boundaries, promotion, and
+rollback are documented in the
+[shared test deployment runbook](./docs/runbooks/shared-test-deployment.md).
 
 ## Current workspace structure
 

@@ -19,7 +19,7 @@ describe("test environment lifecycle", () => {
   });
 
   afterAll(async () => {
-    await postgres.stop();
+    await postgres?.stop();
   });
 
   it("bootstraps idempotently and resets only the Tempo test fixture", async () => {
