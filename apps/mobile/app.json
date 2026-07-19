@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "scheme": "tempo",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.tempo.mobile",
@@ -15,8 +14,7 @@
       }
     },
     "android": {
-      "package": "app.tempo.mobile",
-      "edgeToEdgeEnabled": true
+      "package": "app.tempo.mobile"
     },
     "plugins": [
       "expo-router",
