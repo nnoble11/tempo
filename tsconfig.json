@@ -1,0 +1,53 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/contracts"
+    },
+    {
+      "path": "./packages/database"
+    },
+    {
+      "path": "./packages/delivery"
+    },
+    {
+      "path": "./packages/generation"
+    },
+    {
+      "path": "./packages/ingestion"
+    },
+    {
+      "path": "./packages/intelligence"
+    },
+    {
+      "path": "./packages/ranking"
+    },
+    {
+      "path": "./packages/source-adapters"
+    },
+    {
+      "path": "./packages/domain"
+    },
+    {
+      "path": "./apps/ingestion"
+    },
+    {
+      "path": "./apps/intelligence"
+    },
+    {
+      "path": "./apps/delivery"
+    },
+    {
+      "path": "./apps/generation"
+    },
+    {
+      "path": "./apps/mobile"
+    },
+    {
+      "path": "./apps/test-env"
+    },
+    {
+      "path": "./apps/api"
+    }
+  ]
+}

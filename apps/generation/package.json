@@ -1,0 +1,17 @@
+{
+  "name": "@tempo/generation-runner",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/run.js",
+  "scripts": {
+    "generate": "tsx src/run.ts",
+    "start": "node dist/run.js"
+  },
+  "dependencies": {
+    "@tempo/database": "workspace:*",
+    "@tempo/delivery": "workspace:*",
+    "@tempo/generation": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

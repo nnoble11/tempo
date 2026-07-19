@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>NASA News Releases</title>
+    <item>
+      <title>NASA Announces New Earth Science Mission</title>
+      <link>https://www.nasa.gov/news-release/earth-mission/?utm_source=rss&amp;mission=tempo#overview</link>
+      <guid isPermaLink="false">nasa-release-2026-042</guid>
+      <pubDate>Fri, 17 Jul 2026 14:30:00 +0000</pubDate>
+      <dc:creator>NASA Headquarters</dc:creator>
+      <description><![CDATA[<p>The mission will study changes in Earth&apos;s atmosphere.</p>]]></description>
+      <category>Earth</category>
+      <category>Science</category>
+    </item>
+  </channel>
+</rss>

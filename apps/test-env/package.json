@@ -1,0 +1,20 @@
+{
+  "name": "@tempo/test-env",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bootstrap": "tsx src/bootstrap.ts",
+    "reset": "tsx src/reset.ts",
+    "smoke": "tsx src/smoke.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.7",
+    "@tempo/contracts": "workspace:*",
+    "@tempo/database": "workspace:*",
+    "@tempo/delivery": "workspace:*",
+    "@tempo/generation": "workspace:*",
+    "@tempo/intelligence": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

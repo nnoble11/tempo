@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+>
+  <item rdf:about="https://www.federalreserve.gov/newsevents/pressreleases/monetary20260717a.htm">
+    <title>Federal Reserve issues policy statement</title>
+    <link>https://www.federalreserve.gov/newsevents/pressreleases/monetary20260717a.htm</link>
+    <dc:date>2026-07-17T18:00:00Z</dc:date>
+    <dc:creator>Board of Governors of the Federal Reserve System</dc:creator>
+    <description>Statement concerning monetary policy implementation.</description>
+    <category>Monetary Policy</category>
+  </item>
+</rdf:RDF>

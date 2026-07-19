@@ -1,0 +1,22 @@
+{
+  "name": "@tempo/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "migrate": "tsx src/migrate.ts",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@tempo/contracts": "workspace:*",
+    "@tempo/database": "workspace:*",
+    "@tempo/delivery": "workspace:*",
+    "@tempo/domain": "workspace:*",
+    "fastify": "^5.10.0",
+    "jose": "^6.2.3",
+    "zod": "^4.4.3"
+  }
+}

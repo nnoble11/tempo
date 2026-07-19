@@ -1,0 +1,16 @@
+{
+  "name": "@tempo/intelligence-runner",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/run.js",
+  "scripts": {
+    "process": "tsx src/run.ts",
+    "start": "node dist/run.js"
+  },
+  "dependencies": {
+    "@tempo/database": "workspace:*",
+    "@tempo/intelligence": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

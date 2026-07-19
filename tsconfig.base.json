@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleDetection": "force",
+    "moduleResolution": "NodeNext",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "paths": {
+      "@tempo/contracts": ["./packages/contracts/src/index.ts"],
+      "@tempo/database": ["./packages/database/src/index.ts"],
+      "@tempo/delivery": ["./packages/delivery/src/index.ts"],
+      "@tempo/domain": ["./packages/domain/src/index.ts"],
+      "@tempo/generation": ["./packages/generation/src/index.ts"],
+      "@tempo/ingestion": ["./packages/ingestion/src/index.ts"],
+      "@tempo/intelligence": ["./packages/intelligence/src/index.ts"],
+      "@tempo/ranking": ["./packages/ranking/src/index.ts"],
+      "@tempo/source-adapters": ["./packages/source-adapters/src/index.ts"]
+    },
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2023",
+    "types": ["node"],
+    "useUnknownInCatchVariables": true,
+    "verbatimModuleSyntax": true
+  }
+}

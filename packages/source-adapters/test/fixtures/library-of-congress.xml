@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Library of Congress News</title>
+    <item>
+      <title>Library Adds New Cultural Collection</title>
+      <link>https://www.loc.gov/item/prn-26-101/</link>
+      <guid>loc-news-26-101</guid>
+      <pubDate>Thu, 16 Jul 2026 16:00:00 +0000</pubDate>
+      <description><![CDATA[The collection includes <strong>newly digitized</strong> recordings.]]></description>
+    </item>
+    <item>
+      <title>Malformed entry without a link</title>
+    </item>
+  </channel>
+</rss>

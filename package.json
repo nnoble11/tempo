@@ -1,0 +1,45 @@
+{
+  "name": "tempo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -b && pnpm --filter @tempo/web build",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
+    "clean": "tsc -b --clean",
+    "db:migrate": "pnpm --filter @tempo/api migrate",
+    "deliver:briefings": "pnpm --filter @tempo/delivery-runner deliver",
+    "dev:api": "pnpm --filter @tempo/api dev",
+    "dev:mobile": "pnpm --filter @tempo/mobile start",
+    "dev:web": "pnpm --filter @tempo/web dev",
+    "generate:briefings": "pnpm --filter @tempo/generation-runner generate",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "ingest:sources": "pnpm --filter @tempo/ingestion-runner ingest",
+    "process:intelligence": "pnpm --filter @tempo/intelligence-runner process",
+    "lint": "eslint . --max-warnings 0",
+    "test": "pnpm build && vitest run",
+    "test:env:bootstrap": "node --env-file=.env.test --import=tsx apps/test-env/src/bootstrap.ts",
+    "test:env:reset": "node --env-file=.env.test --import=tsx apps/test-env/src/reset.ts",
+    "test:env:smoke": "node --env-file=.env.test --import=tsx apps/test-env/src/smoke.ts",
+    "test:env:start": "node --env-file=.env.test scripts/run-test-environment.mjs",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --pretty false && pnpm --filter @tempo/web exec tsc --noEmit --pretty false"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.1",
+    "@types/pg": "^8.20.0",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5",
+    "tsx": "^4.23.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@tempo/delivery-runner",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/run.js",
+  "scripts": {
+    "deliver": "tsx src/run.ts",
+    "start": "node dist/run.js"
+  },
+  "dependencies": {
+    "@tempo/database": "workspace:*",
+    "@tempo/delivery": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

@@ -1,0 +1,382 @@
+:root {
+  --ink: #18211d;
+  --muted: #68736d;
+  --paper: #f4f2ea;
+  --card: #fffef9;
+  --line: #d9ddd5;
+  --accent: #167a5a;
+  --accent-soft: #dff1e8;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  background: var(--paper);
+}
+body {
+  background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(22, 122, 90, 0.08),
+      transparent 27rem
+    ),
+    var(--paper);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+}
+a {
+  color: inherit;
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.shell,
+.setupShell {
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 28px 30px 80px;
+}
+.topbar,
+.setupShell > header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 60px;
+}
+.wordmark {
+  color: var(--ink);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  text-decoration: none;
+}
+.timePill {
+  background: var(--accent-soft);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 800;
+  padding: 10px 16px;
+}
+.hero,
+.setupHero {
+  border-bottom: 1px solid var(--line);
+  padding: 80px 0 54px;
+}
+.hero {
+  max-width: 820px;
+}
+.hero h1,
+.setupHero h1,
+.authIntro h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 7vw, 76px);
+  font-weight: 500;
+  letter-spacing: -2.5px;
+  line-height: 1.03;
+  margin: 14px 0 22px;
+}
+.eyebrow {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+  margin: 0;
+}
+.muted,
+.takeaway,
+.centerState p,
+.authIntro > p {
+  color: var(--muted);
+  line-height: 1.65;
+}
+.briefingGrid {
+  display: grid;
+  gap: 22px;
+  padding-top: 30px;
+}
+.story {
+  background: rgba(255, 254, 249, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: clamp(24px, 4vw, 42px);
+}
+.storyMeta {
+  color: var(--accent);
+  display: flex;
+  font-size: 12px;
+  font-weight: 800;
+  justify-content: space-between;
+  letter-spacing: 1px;
+}
+.story h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 500;
+  letter-spacing: -1px;
+  line-height: 1.08;
+  margin: 26px 0 14px;
+}
+.takeaway {
+  font-size: 18px;
+  max-width: 800px;
+}
+.explanation {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 170px 1fr;
+  line-height: 1.65;
+  margin-top: 28px;
+  padding: 26px 0;
+}
+.explanation p {
+  margin: 0;
+}
+.sources {
+  display: grid;
+  gap: 8px;
+  padding-top: 18px;
+}
+.sources a {
+  align-items: center;
+  background: #f2f4ef;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  padding: 13px 15px;
+  text-decoration: none;
+}
+.sources a span:first-child {
+  display: grid;
+  gap: 3px;
+}
+.sources small {
+  color: var(--muted);
+}
+.done {
+  padding: 76px 0 20px;
+  text-align: center;
+}
+.done > span {
+  background: var(--accent);
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+.done h2 {
+  font-family: Georgia, serif;
+  font-size: 34px;
+  font-weight: 500;
+  margin: 15px 0 4px;
+}
+.done p {
+  color: var(--muted);
+  margin: 0;
+}
+.centerState {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 30px;
+  text-align: center;
+}
+.centerState h1 {
+  font-family: Georgia, serif;
+  font-size: 44px;
+  font-weight: 500;
+  margin: 28px 0 8px;
+}
+.authShell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  min-height: 100vh;
+}
+.authIntro {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(36px, 8vw, 110px);
+}
+.authIntro .wordmark {
+  margin-bottom: auto;
+}
+.authIntro .eyebrow {
+  margin-top: auto;
+}
+.authIntro > p {
+  font-size: 17px;
+  max-width: 620px;
+}
+.authCard {
+  align-self: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  display: grid;
+  gap: 18px;
+  margin: 30px;
+  padding: clamp(28px, 5vw, 52px);
+}
+.authCard h2 {
+  font-family: Georgia, serif;
+  font-size: 34px;
+  font-weight: 500;
+  margin: 0 0 10px;
+}
+label {
+  color: var(--muted);
+  display: grid;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  letter-spacing: 0.4px;
+}
+input,
+textarea {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  padding: 13px 14px;
+}
+.authCard > button:not(.textButton),
+.primaryLarge {
+  background: var(--accent);
+  border: 0;
+  border-radius: 11px;
+  color: white;
+  font-weight: 800;
+  padding: 14px 18px;
+}
+.textButton {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font-size: 13px;
+}
+.formMessage {
+  color: #9b3e31;
+  font-size: 14px;
+}
+.setupShell > header p {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+.setupGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 28px 0;
+}
+.setupCard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+.setupCard > span {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+}
+.setupCard h2 {
+  font-family: Georgia, serif;
+  font-size: 26px;
+  font-weight: 500;
+  margin: 0;
+}
+.choiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.choice {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  padding: 9px 13px;
+  text-transform: capitalize;
+}
+.choice.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.primaryLarge {
+  display: block;
+  margin-left: auto;
+  padding: 16px 24px;
+}
+
+@media (max-width: 820px) {
+  .shell,
+  .setupShell {
+    padding: 20px 18px 60px;
+  }
+  .hero,
+  .setupHero {
+    padding: 54px 0 38px;
+  }
+  .explanation {
+    grid-template-columns: 1fr;
+  }
+  .authShell {
+    grid-template-columns: 1fr;
+  }
+  .authIntro {
+    min-height: 46vh;
+    padding: 30px;
+  }
+  .authIntro .wordmark {
+    margin-bottom: 70px;
+  }
+  .authCard {
+    margin: 18px;
+  }
+  .setupGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #edf2ee;
+    --muted: #a7b2ac;
+    --paper: #111713;
+    --card: #18211c;
+    --line: #344039;
+    --accent: #61d2a5;
+    --accent-soft: #173d30;
+    color-scheme: dark;
+  }
+  input,
+  textarea {
+    background: #111713;
+  }
+  .sources a {
+    background: #202b25;
+  }
+}
