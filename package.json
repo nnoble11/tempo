@@ -26,7 +26,7 @@
     "start:generation": "node apps/generation/dist/run.js",
     "start:ingestion": "node apps/ingestion/dist/run.js",
     "start:intelligence": "node apps/intelligence/dist/run.js",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "tsc -b packages/contracts --pretty false && eslint . --max-warnings 0",
     "migrate:production": "node apps/api/dist/migrate.js",
     "test": "pnpm build && vitest run",
     "test:env:bootstrap": "node --env-file=.env.test --import=tsx apps/test-env/src/bootstrap.ts",
