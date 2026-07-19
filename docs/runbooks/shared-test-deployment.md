@@ -32,6 +32,39 @@ Overlapping invocations are safe because PostgreSQL leases and idempotency keys
 coordinate work. The scheduler should still avoid starting a second copy when a
 prior invocation is visibly running.
 
+## Render Blueprint
+
+The repository root contains `render.yaml`. It creates the API and four
+scheduled runners from the shared Dockerfile, runs migrations before API
+releases, waits for GitHub checks before automatic deploys, and keeps preview
+environments off to avoid accidental test infrastructure.
+
+Before creating the Blueprint, connect Render's GitHub App to `nnoble11/tempo`.
+In Render, open **Account Settings**, scroll to **Account Security**, and add a
+GitHub credential under **Git Deployment Credentials**. If the account is
+already connected but Tempo is missing, configure the Render GitHub App at
+<https://github.com/apps/render/installations/new> and include the `tempo`
+repository under **Repository access**.
+
+Then choose **New > Blueprint**, select `nnoble11/tempo`, and keep the Blueprint
+path as `render.yaml`. Render prompts for only:
+
+- `DATABASE_URL`: the Supabase **Session pooler** connection string on port
+  `5432`, with the real database password substituted. Do not use the existing
+  local `.env.test` URL or Supabase's IPv6-only direct URL. Render cannot reach
+  either one.
+- `SUPABASE_URL`: the same test project URL used by the clients.
+
+Render generates `DELIVERY_VERIFICATION_SECRET`. The runners reference the API's
+database value, so the database credential is entered only once. Review the
+estimated paid resources before applying the Blueprint; cron jobs do not support
+Render's free instance type.
+
+The initial Blueprint intentionally uses `https://tempo.invalid` as a closed
+placeholder for browser CORS and briefing links. After the web service has a
+final HTTPS origin, replace `CORS_ALLOWED_ORIGINS` on `tempo-api-test` and
+`BRIEFING_PUBLIC_BASE_URL` on `tempo-generation-test`, then redeploy both.
+
 ## Server environment
 
 Set these on the API:
