@@ -11,8 +11,8 @@ services:
     autoDeployTrigger: checksPass
     dockerfilePath: ./infrastructure/docker/Dockerfile
     dockerContext: .
-    dockerCommand: pnpm start:api
-    preDeployCommand: pnpm migrate:production
+    dockerCommand: node apps/api/dist/server.js
+    preDeployCommand: node apps/api/dist/migrate.js
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
@@ -50,7 +50,7 @@ services:
     schedule: "*/15 * * * *"
     dockerfilePath: ./infrastructure/docker/Dockerfile
     dockerContext: .
-    dockerCommand: pnpm start:ingestion
+    dockerCommand: node apps/ingestion/dist/run.js
     envVars:
       - key: DATABASE_URL
         fromService:
@@ -75,7 +75,7 @@ services:
     schedule: "* * * * *"
     dockerfilePath: ./infrastructure/docker/Dockerfile
     dockerContext: .
-    dockerCommand: pnpm start:intelligence
+    dockerCommand: node apps/intelligence/dist/run.js
     envVars:
       - key: DATABASE_URL
         fromService:
@@ -100,7 +100,7 @@ services:
     schedule: "* * * * *"
     dockerfilePath: ./infrastructure/docker/Dockerfile
     dockerContext: .
-    dockerCommand: pnpm start:generation
+    dockerCommand: node apps/generation/dist/run.js
     envVars:
       - key: DATABASE_URL
         fromService:
@@ -128,7 +128,7 @@ services:
     schedule: "* * * * *"
     dockerfilePath: ./infrastructure/docker/Dockerfile
     dockerContext: .
-    dockerCommand: pnpm start:delivery
+    dockerCommand: node apps/delivery/dist/run.js
     envVars:
       - key: DATABASE_URL
         fromService:
