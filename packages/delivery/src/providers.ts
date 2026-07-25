@@ -16,6 +16,19 @@ export class DeliveryProviderError extends Error {
   }
 }
 
+/**
+ * Structural guard for DeliveryProviderError that stays correct even when a
+ * bundler or test runner loads more than one copy of this module, where
+ * instanceof would fail across copies.
+ */
+export const isDeliveryProviderError = (
+  error: unknown,
+): error is DeliveryProviderError =>
+  error instanceof DeliveryProviderError ||
+  (error instanceof Error &&
+    error.name === "DeliveryProviderError" &&
+    typeof (error as { retryable?: unknown }).retryable === "boolean");
+
 export type DeliveryProviderResult = {
   providerMessageId: string;
 };

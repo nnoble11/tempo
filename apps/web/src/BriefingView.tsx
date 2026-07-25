@@ -11,6 +11,17 @@ const uniqueSources = (briefing: CanonicalBriefing, itemIndex: number) => {
   ];
 };
 
+// Mirrors the mobile presentation: the minimum claim confidence, so one weakly
+// supported claim cannot hide behind stronger ones.
+const itemConfidenceLabel = (
+  item: CanonicalBriefing["items"][number],
+): string | null => {
+  if (item.claims.length === 0) return null;
+  const value = Math.min(...item.claims.map((claim) => claim.confidence));
+  const label = value >= 0.75 ? "High" : value >= 0.5 ? "Moderate" : "Low";
+  return `${label} · ${Math.round(value * 100)}%`;
+};
+
 export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
   return (
     <main className="shell">
@@ -43,6 +54,12 @@ export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
               <p>{item.whyItMatters}</p>
               <p className="eyebrow">WHAT CHANGED</p>
               <p>{item.whatChanged}</p>
+              {itemConfidenceLabel(item) === null ? null : (
+                <>
+                  <p className="eyebrow">CONFIDENCE</p>
+                  <p>{itemConfidenceLabel(item)}</p>
+                </>
+              )}
             </div>
             <div className="sources">
               {uniqueSources(briefing, index).map((source) => (

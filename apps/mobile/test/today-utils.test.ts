@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatBriefingDuration,
+  formatItemConfidence,
+  getItemConfidence,
   getTodayViewState,
   uniqueItemCitations,
 } from "../src/features/today/today-utils";
@@ -53,5 +55,32 @@ describe("Today presentation state", () => {
     } as CanonicalBriefingItem;
 
     expect(uniqueItemCitations(item)).toEqual([citation]);
+  });
+
+  it("summarizes item confidence by the weakest grounded claim", () => {
+    const item = {
+      claims: [{ confidence: 0.92 }, { confidence: 0.61 }],
+    } as CanonicalBriefingItem;
+
+    expect(getItemConfidence(item)).toEqual({ value: 0.61, label: "Moderate" });
+    expect(
+      getItemConfidence({ claims: [] } as unknown as CanonicalBriefingItem),
+    ).toBeNull();
+  });
+
+  it("labels confidence bands and formats a readable value", () => {
+    expect(
+      getItemConfidence({
+        claims: [{ confidence: 0.8 }],
+      } as CanonicalBriefingItem),
+    ).toEqual({ value: 0.8, label: "High" });
+    expect(
+      getItemConfidence({
+        claims: [{ confidence: 0.31 }],
+      } as CanonicalBriefingItem),
+    ).toEqual({ value: 0.31, label: "Low" });
+    expect(formatItemConfidence({ value: 0.61, label: "Moderate" })).toBe(
+      "Moderate · 61%",
+    );
   });
 });
