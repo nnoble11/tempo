@@ -31,4 +31,7 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT ?? '3001'}/health`).then((response) => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1));"]
 
-CMD ["pnpm", "start:api"]
+# Run node directly: a pnpm wrapper triggers a corepack download and a pnpm
+# deps check/install at boot, which OOMs a 512Mi instance. Dependencies are
+# already baked into the image.
+CMD ["node", "apps/api/dist/server.js"]
