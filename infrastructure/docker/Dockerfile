@@ -23,6 +23,7 @@ RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
 
 WORKDIR /workspace
 COPY --from=build --chown=node:node /workspace /workspace
+RUN chown node:node /workspace
 
 USER node
 EXPOSE 3001
