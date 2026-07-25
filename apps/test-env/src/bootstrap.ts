@@ -136,10 +136,15 @@ try {
   process.stdout.write(
     `${JSON.stringify({
       event: "tempo_test_environment_bootstrapped",
-      userId,
-      email: environment.TEST_USER_EMAIL,
-      intelligence,
-      generation,
+      intelligence: {
+        claimed: intelligence.claimed,
+        completed: intelligence.completed,
+        failed: intelligence.failed,
+      },
+      generation: {
+        claimed: generation.claimed,
+        outcomeStatuses: generation.outcomes.map((outcome) => outcome.status),
+      },
     })}\n`,
   );
 } finally {

@@ -44,6 +44,13 @@ describe("test environment lifecycle", () => {
 
     expect(first.stdout).toContain("tempo_test_environment_bootstrapped");
     expect(second.stdout).toContain("tempo_test_environment_bootstrapped");
+    for (const output of [first.stdout, second.stdout]) {
+      expect(output).not.toContain(environment.TEST_USER_ID);
+      expect(output).not.toContain(environment.TEST_USER_EMAIL);
+      expect(output).not.toMatch(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i,
+      );
+    }
 
     const pool = createDatabasePool({
       connectionString: postgres.connectionString,

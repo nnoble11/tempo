@@ -13,6 +13,9 @@
     "preview": {
       "distribution": "internal",
       "environment": "preview",
+      "env": {
+        "TEMPO_ANDROID_USES_CLEARTEXT": "true"
+      },
       "android": {
         "buildType": "apk"
       }
