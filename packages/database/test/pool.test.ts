@@ -31,4 +31,32 @@ describe("createDatabasePool", () => {
 
     await pool.end();
   });
+
+  it("verifies against a provided CA certificate when SSL is enabled", async () => {
+    const caCert =
+      "-----BEGIN CERTIFICATE-----\nMIItest\n-----END CERTIFICATE-----";
+    const pool = createDatabasePool({
+      connectionString: "postgresql://db.example/tempo",
+      useSsl: true,
+      caCert: `  ${caCert}  `,
+    });
+
+    expect(pool.options.ssl).toMatchObject({
+      rejectUnauthorized: true,
+      ca: caCert,
+    });
+
+    await pool.end();
+  });
+
+  it("keeps strict verification without a CA when none is provided", async () => {
+    const pool = createDatabasePool({
+      connectionString: "postgresql://db.example/tempo",
+      useSsl: true,
+    });
+
+    expect(pool.options.ssl).toEqual({ rejectUnauthorized: true });
+
+    await pool.end();
+  });
 });

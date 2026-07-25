@@ -19,6 +19,10 @@ services:
         sync: false
       - key: DATABASE_SSL
         value: "true"
+      # PEM contents of the Supabase project CA (e.g. prod-ca-2021.crt). Required
+      # so the self-signed Supabase pooler chain verifies with rejectUnauthorized.
+      - key: DATABASE_CA_CERT
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_JWT_AUDIENCE
@@ -55,6 +59,11 @@ services:
           envVarKey: DATABASE_URL
       - key: DATABASE_SSL
         value: "true"
+      - key: DATABASE_CA_CERT
+        fromService:
+          type: web
+          name: tempo-api-test
+          envVarKey: DATABASE_CA_CERT
 
   - type: cron
     name: tempo-intelligence-test
@@ -75,6 +84,11 @@ services:
           envVarKey: DATABASE_URL
       - key: DATABASE_SSL
         value: "true"
+      - key: DATABASE_CA_CERT
+        fromService:
+          type: web
+          name: tempo-api-test
+          envVarKey: DATABASE_CA_CERT
 
   - type: cron
     name: tempo-generation-test
@@ -95,6 +109,11 @@ services:
           envVarKey: DATABASE_URL
       - key: DATABASE_SSL
         value: "true"
+      - key: DATABASE_CA_CERT
+        fromService:
+          type: web
+          name: tempo-api-test
+          envVarKey: DATABASE_CA_CERT
       # Replace this with the deployed web origin before generating tester data.
       - key: BRIEFING_PUBLIC_BASE_URL
         value: https://tempo.invalid
@@ -118,3 +137,8 @@ services:
           envVarKey: DATABASE_URL
       - key: DATABASE_SSL
         value: "true"
+      - key: DATABASE_CA_CERT
+        fromService:
+          type: web
+          name: tempo-api-test
+          envVarKey: DATABASE_CA_CERT
