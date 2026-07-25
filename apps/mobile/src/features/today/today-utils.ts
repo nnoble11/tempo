@@ -36,3 +36,28 @@ export const uniqueItemCitations = (
       .map((citation) => [citation.citationId, citation]),
   ).values(),
 ];
+
+export type ItemConfidence = {
+  /** The item's weakest grounded claim confidence, in [0, 1]. */
+  value: number;
+  label: "High" | "Moderate" | "Low";
+};
+
+/**
+ * Summarizes an item's claim confidences for display. Uses the minimum so a
+ * single weakly-supported claim cannot hide behind stronger ones. Returns null
+ * for items without grounded claims.
+ */
+export const getItemConfidence = (
+  item: CanonicalBriefingItem,
+): ItemConfidence | null => {
+  if (item.claims.length === 0) {
+    return null;
+  }
+  const value = Math.min(...item.claims.map((claim) => claim.confidence));
+  const label = value >= 0.75 ? "High" : value >= 0.5 ? "Moderate" : "Low";
+  return { value, label };
+};
+
+export const formatItemConfidence = (confidence: ItemConfidence): string =>
+  `${confidence.label} · ${Math.round(confidence.value * 100)}%`;

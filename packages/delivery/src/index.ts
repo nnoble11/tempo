@@ -1,5 +1,6 @@
 export {
   DeliveryProviderError,
+  isDeliveryProviderError,
   DeliveryProviderRegistry,
   ExpoPushProvider,
   ResendEmailProvider,

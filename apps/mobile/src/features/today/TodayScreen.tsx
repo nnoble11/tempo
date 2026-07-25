@@ -22,6 +22,8 @@ import { darkPalette, lightPalette, type TempoPalette } from "../../theme";
 import { useRecordBriefingInteraction, useTodayBriefing } from "./hooks";
 import {
   formatBriefingDuration,
+  formatItemConfidence,
+  getItemConfidence,
   getTodayViewState,
   uniqueItemCitations,
 } from "./today-utils";
@@ -73,6 +75,7 @@ function ItemCard({
 }: ItemCardProps) {
   const styles = useMemo(() => createStyles(palette), [palette]);
   const citations = uniqueItemCitations(item);
+  const confidence = getItemConfidence(item);
 
   return (
     <View
@@ -113,6 +116,18 @@ function ItemCard({
 
           <Text style={styles.detailLabel}>WHAT CHANGED</Text>
           <Text style={styles.detailText}>{item.whatChanged}</Text>
+
+          {confidence === null ? null : (
+            <>
+              <Text style={styles.detailLabel}>CONFIDENCE</Text>
+              <Text
+                accessibilityLabel={`Confidence ${formatItemConfidence(confidence)}`}
+                style={styles.detailText}
+              >
+                {formatItemConfidence(confidence)}
+              </Text>
+            </>
+          )}
 
           <Text style={styles.detailLabel}>
             {citations.length === 1 ? "SOURCE" : "SOURCES"}
@@ -213,6 +228,7 @@ export function TodayScreen() {
   const [feedback, setFeedback] = useState<
     Record<string, "useful" | "not_useful">
   >({});
+  const [interactionError, setInteractionError] = useState<string | null>(null);
   const briefing = query.data?.briefing;
   const viewState = getTodayViewState({
     isPending: query.isPending,
@@ -281,8 +297,63 @@ export function TodayScreen() {
     item: CanonicalBriefingItem,
     eventType: "useful" | "not_useful",
   ): void => {
+    if (briefing === null || briefing === undefined) {
+      return;
+    }
+    const previous = feedback[item.id] ?? null;
+    setInteractionError(null);
     setFeedback((current) => ({ ...current, [item.id]: eventType }));
-    recordItemInteraction(item, eventType);
+    interaction.mutate(
+      {
+        briefingId: briefing.id,
+        briefingItemId: item.id,
+        interaction: {
+          eventType,
+          value: {},
+          idempotencyKey: interactionKey(eventType, item.id),
+        },
+      },
+      {
+        onError: () => {
+          setFeedback((current) => {
+            if (previous === null) {
+              return Object.fromEntries(
+                Object.entries(current).filter(([id]) => id !== item.id),
+              );
+            }
+            return { ...current, [item.id]: previous };
+          });
+          setInteractionError(
+            "Your feedback didn’t save. Check your connection and try again.",
+          );
+        },
+      },
+    );
+  };
+
+  const saveItem = (item: CanonicalBriefingItem): void => {
+    if (briefing === null || briefing === undefined) {
+      return;
+    }
+    setInteractionError(null);
+    interaction.mutate(
+      {
+        briefingId: briefing.id,
+        briefingItemId: item.id,
+        interaction: {
+          eventType: "saved",
+          value: {},
+          idempotencyKey: interactionKey("saved", item.id),
+        },
+      },
+      {
+        onError: () => {
+          setInteractionError(
+            "This update wasn’t saved. Check your connection and try again.",
+          );
+        },
+      },
+    );
   };
 
   const openCitation = (
@@ -391,6 +462,19 @@ export function TodayScreen() {
           </Text>
         </View>
 
+        {interactionError === null ? null : (
+          <View accessibilityRole="alert" style={styles.noticeBanner}>
+            <Text style={styles.noticeText}>{interactionError}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setInteractionError(null)}
+              style={({ pressed }) => pressed && styles.pressed}
+            >
+              <Text style={styles.noticeDismiss}>Dismiss</Text>
+            </Pressable>
+          </View>
+        )}
+
         <View style={styles.itemList}>
           {briefing.items.map((item) => (
             <ItemCard
@@ -402,7 +486,7 @@ export function TodayScreen() {
               palette={palette}
               onToggle={() => toggleExpanded(item)}
               onFeedback={(eventType) => recordFeedback(item, eventType)}
-              onSave={() => recordItemInteraction(item, "saved")}
+              onSave={() => saveItem(item)}
               onOpenCitation={(citationId, url) =>
                 openCitation(item, citationId, url)
               }
@@ -531,6 +615,29 @@ const createStyles = (palette: TempoPalette) =>
     itemList: {
       gap: 16,
       marginTop: 18,
+    },
+    noticeBanner: {
+      alignItems: "center",
+      backgroundColor: palette.accentSoft,
+      borderColor: palette.accent,
+      borderRadius: 12,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: 12,
+      marginTop: 18,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    noticeText: {
+      color: palette.text,
+      flex: 1,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    noticeDismiss: {
+      color: palette.accent,
+      fontSize: 12,
+      fontWeight: "800",
     },
     itemCard: {
       backgroundColor: palette.surface,

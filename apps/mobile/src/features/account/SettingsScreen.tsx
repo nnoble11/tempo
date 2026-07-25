@@ -217,6 +217,22 @@ export function SettingsScreen() {
             onPress={addDestination}
             styles={styles}
           />
+          {endpoints.isError ? (
+            <View style={styles.endpoint}>
+              <Text accessibilityRole="alert" style={styles.endpointError}>
+                Your destinations could not be loaded.{" "}
+                {endpoints.error instanceof Error
+                  ? endpoints.error.message
+                  : "Check your connection and try again."}
+              </Text>
+              <Action
+                label="Retry"
+                disabled={endpoints.isRefetching}
+                onPress={() => void endpoints.refetch()}
+                styles={styles}
+              />
+            </View>
+          ) : null}
           {endpoints.data?.map((endpoint) => (
             <View key={endpoint.id} style={styles.endpoint}>
               <View style={styles.endpointCopy}>
@@ -400,4 +416,9 @@ const createStyles = (palette: TempoPalette) =>
       width: 90,
     },
     message: { color: palette.accent, fontSize: 14, fontWeight: "700" },
+    endpointError: {
+      color: palette.text,
+      fontSize: 13,
+      lineHeight: 18,
+    },
   });

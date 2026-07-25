@@ -14,7 +14,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { darkPalette, lightPalette, type TempoPalette } from "../../theme";
 import { useBriefing } from "./hooks";
-import { formatBriefingDuration, uniqueItemCitations } from "./today-utils";
+import {
+  formatBriefingDuration,
+  formatItemConfidence,
+  getItemConfidence,
+  uniqueItemCitations,
+} from "./today-utils";
 
 export function BriefingDetailScreen() {
   const { briefingId } = useLocalSearchParams<{ briefingId: string }>();
@@ -59,32 +64,43 @@ export function BriefingDetailScreen() {
           {formatBriefingDuration(briefing.estimatedSeconds)} ·{" "}
           {briefing.items.length} updates
         </Text>
-        {briefing.items.map((item) => (
-          <View key={item.id} style={styles.card}>
-            <Text style={styles.number}>
-              {String(item.position).padStart(2, "0")}
-            </Text>
-            <Text style={styles.headline}>{item.headline}</Text>
-            <Text style={styles.copy}>{item.takeaway}</Text>
-            <Text style={styles.label}>WHY IT MATTERS</Text>
-            <Text style={styles.copy}>{item.whyItMatters}</Text>
-            <Text style={styles.label}>WHAT CHANGED</Text>
-            <Text style={styles.copy}>{item.whatChanged}</Text>
-            {uniqueItemCitations(item).map((citation) => (
-              <Pressable
-                key={citation.citationId}
-                accessibilityRole="link"
-                onPress={() => void Linking.openURL(citation.canonicalUrl)}
-                style={styles.source}
-              >
-                <Text style={styles.sourceText}>
-                  {citation.publisher} · {citation.sourceTitle}
-                </Text>
-                <Text style={styles.sourceArrow}>↗</Text>
-              </Pressable>
-            ))}
-          </View>
-        ))}
+        {briefing.items.map((item) => {
+          const confidence = getItemConfidence(item);
+          return (
+            <View key={item.id} style={styles.card}>
+              <Text style={styles.number}>
+                {String(item.position).padStart(2, "0")}
+              </Text>
+              <Text style={styles.headline}>{item.headline}</Text>
+              <Text style={styles.copy}>{item.takeaway}</Text>
+              <Text style={styles.label}>WHY IT MATTERS</Text>
+              <Text style={styles.copy}>{item.whyItMatters}</Text>
+              <Text style={styles.label}>WHAT CHANGED</Text>
+              <Text style={styles.copy}>{item.whatChanged}</Text>
+              {confidence === null ? null : (
+                <>
+                  <Text style={styles.label}>CONFIDENCE</Text>
+                  <Text style={styles.copy}>
+                    {formatItemConfidence(confidence)}
+                  </Text>
+                </>
+              )}
+              {uniqueItemCitations(item).map((citation) => (
+                <Pressable
+                  key={citation.citationId}
+                  accessibilityRole="link"
+                  onPress={() => void Linking.openURL(citation.canonicalUrl)}
+                  style={styles.source}
+                >
+                  <Text style={styles.sourceText}>
+                    {citation.publisher} · {citation.sourceTitle}
+                  </Text>
+                  <Text style={styles.sourceArrow}>↗</Text>
+                </Pressable>
+              ))}
+            </View>
+          );
+        })}
         <Text style={styles.finished}>You’re informed. That’s the end.</Text>
       </ScrollView>
     </SafeAreaView>

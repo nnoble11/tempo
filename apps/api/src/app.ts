@@ -1,5 +1,6 @@
 import { planBriefing } from "@tempo/domain";
 import { IdempotencyConflictError } from "@tempo/database";
+import { isDeliveryProviderError } from "@tempo/delivery";
 import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
 import { ZodError } from "zod";
@@ -69,6 +70,18 @@ export const buildApp = (dependencies: AppDependencies): FastifyInstance => {
         error: {
           code: "IDEMPOTENCY_CONFLICT",
           message: error.message,
+        },
+      });
+    }
+
+    if (isDeliveryProviderError(error)) {
+      return reply.status(503).send({
+        error: {
+          code: "DELIVERY_PROVIDER_UNAVAILABLE",
+          message: error.message,
+          details: {
+            retryable: error.retryable,
+          },
         },
       });
     }
