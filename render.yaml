@@ -35,10 +35,31 @@ services:
         value: "false"
       - key: DELIVERY_VERIFICATION_SECRET
         generateValue: true
-      # Replace this closed placeholder with the deployed web origin before
-      # browser testing. Native mobile clients do not enforce browser CORS.
+      # Browser CORS allowlist. Native mobile clients do not enforce CORS.
       - key: CORS_ALLOWED_ORIGINS
-        value: https://tempo.invalid
+        value: https://tempo-web-test.onrender.com
+
+  - type: web
+    name: tempo-web-test
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand:
+      corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm --filter @tempo/web start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NEXT_PUBLIC_API_URL
+        value: https://tempo-api-test.onrender.com
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://pgasgmtqbvmitmwhkxui.supabase.co
+      # Publishable key: public by design; the same value ships in the mobile app.
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        value: sb_publishable_NMfOIQ0WXa5kNMtiEfhX0w_fjM-FK9P
 
   - type: cron
     name: tempo-ingestion-test
@@ -114,9 +135,9 @@ services:
           type: web
           name: tempo-api-test
           envVarKey: DATABASE_CA_CERT
-      # Replace this with the deployed web origin before generating tester data.
+      # Base origin for briefing links embedded in delivered messages.
       - key: BRIEFING_PUBLIC_BASE_URL
-        value: https://tempo.invalid
+        value: https://tempo-web-test.onrender.com
 
   - type: cron
     name: tempo-delivery-test

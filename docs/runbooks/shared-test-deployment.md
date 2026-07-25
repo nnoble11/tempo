@@ -34,10 +34,11 @@ prior invocation is visibly running.
 
 ## Render Blueprint
 
-The repository root contains `render.yaml`. It creates the API and four
-scheduled runners from the shared Dockerfile, runs migrations before API
-releases, waits for GitHub checks before automatic deploys, and keeps preview
-environments off to avoid accidental test infrastructure.
+The repository root contains `render.yaml`. It creates the API, the Next.js web
+app, and four scheduled runners; the API and runners build from the shared
+Dockerfile while the web app uses Render's Node runtime. It runs migrations
+before API releases, waits for GitHub checks before automatic deploys, and keeps
+preview environments off to avoid accidental test infrastructure.
 
 Before creating the Blueprint, connect Render's GitHub App to `nnoble11/tempo`.
 In Render, open **Account Settings**, scroll to **Account Security**, and add a
@@ -60,10 +61,16 @@ database value, so the database credential is entered only once. Review the
 estimated paid resources before applying the Blueprint; cron jobs do not support
 Render's free instance type.
 
-The initial Blueprint intentionally uses `https://tempo.invalid` as a closed
-placeholder for browser CORS and briefing links. After the web service has a
-final HTTPS origin, replace `CORS_ALLOWED_ORIGINS` on `tempo-api-test` and
-`BRIEFING_PUBLIC_BASE_URL` on `tempo-generation-test`, then redeploy both.
+The web app deploys as `tempo-web-test` and serves
+`https://tempo-web-test.onrender.com`, which is also the value of
+`CORS_ALLOWED_ORIGINS` on `tempo-api-test` and `BRIEFING_PUBLIC_BASE_URL` on
+`tempo-generation-test`. The `NEXT_PUBLIC_*` values in `render.yaml` are public
+client configuration, not secrets. If Render ever assigns the web service a
+different hostname (the subdomain is claimed globally at first deploy), update
+those two variables to the assigned origin in the same way. When a custom domain
+is added later, point all three values at that domain instead; briefing links
+embedded in already-delivered messages keep whatever origin was active when they
+were generated.
 
 ## Server environment
 
