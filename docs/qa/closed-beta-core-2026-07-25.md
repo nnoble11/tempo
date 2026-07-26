@@ -131,7 +131,7 @@ conditional rows fully passed:
 6. Revoke Calendar access and disconnect Tempo; confirm suggestions stop and the
    connection/busy-window records are removed.
 
-Use the exact provider/build commands and database checks in
+Use the delivery commands and database checks in
 [`docs/runbooks/briefing-delivery.md`](../runbooks/briefing-delivery.md). Do not
 add real credentials to the repository or screenshots.
 
