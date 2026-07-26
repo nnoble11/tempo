@@ -625,7 +625,7 @@ Use a monorepo.
 
 Why:
 
-- one codebase for iOS and Android;
+- one focused native codebase for iOS;
 - strong fit for notification-heavy consumer apps;
 - rapid iteration;
 - over-the-air update support where appropriate;
@@ -1101,7 +1101,7 @@ Do not use raw time-in-app as the primary objective.
 
 ### Must have
 
-- iOS and Android mobile app;
+- iOS mobile app;
 - responsive web companion;
 - authentication;
 - topic, entity, and natural-language interest creation;

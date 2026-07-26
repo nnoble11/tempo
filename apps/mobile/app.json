@@ -13,19 +13,7 @@
         "usesNonExemptEncryption": false
       }
     },
-    "android": {
-      "package": "app.tempo.mobile"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      [
-        "expo-notifications",
-        {
-          "defaultChannel": "daily-briefing"
-        }
-      ]
-    ],
+    "plugins": ["expo-router", "expo-secure-store", "expo-notifications"],
     "experiments": {
       "typedRoutes": true
     },

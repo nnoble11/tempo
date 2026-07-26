@@ -10,13 +10,13 @@ deduplicates, ranks, and budgets meaningful updates to fit that time.
 ## Repository status
 
 Tempo now has an integrated testable path from account creation and normalized
-source intelligence to a scheduled, finite briefing on iOS, Android, and the
-responsive web companion. The implemented slices cover secure Supabase
-authentication; atomic preference and interest onboarding; credential-free
-first-party ingestion; lease-backed asynchronous story intelligence; scheduled
-per-user selection and grounded generation; immutable canonical briefing
-persistence; verified, quiet-hour-aware delivery; Expo push receipt cleanup;
-feedback interactions; and canonical mobile/web reading routes.
+source intelligence to a scheduled, finite briefing on iOS and the responsive
+web companion. The implemented slices cover secure Supabase authentication;
+atomic preference and interest onboarding; credential-free first-party
+ingestion; lease-backed asynchronous story intelligence; scheduled per-user
+selection and grounded generation; immutable canonical briefing persistence;
+verified, quiet-hour-aware delivery; Expo push receipt cleanup; feedback
+interactions; and canonical mobile/web reading routes.
 
 Onboarding, canonical generation, delivery scheduling, and feedback writes are
 user-scoped and idempotent. Scheduled workers use observable PostgreSQL records,

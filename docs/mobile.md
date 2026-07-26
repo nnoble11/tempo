@@ -1,7 +1,7 @@
 # Mobile Today Experience
 
 Status: Authenticated onboarding, delivery control, and consumption path  
-Last updated: 2026-07-18
+Last updated: 2026-07-25
 
 ## Purpose
 
@@ -55,10 +55,9 @@ profile.
 Set `EXPO_PUBLIC_EAS_PROJECT_ID` for physical-device push registration. After
 onboarding, the app registers only when the user selected push:
 
-1. configure the Android `daily-briefing` notification channel;
-2. request operating-system permission;
-3. obtain the EAS project-scoped Expo push token;
-4. upsert the token through the authenticated delivery-endpoint API.
+1. request iOS notification permission;
+2. obtain the EAS project-scoped Expo push token;
+3. upsert the token through the authenticated delivery-endpoint API.
 
 Simulators, web, missing project configuration, and denied permission exit
 without registering an endpoint. Push registration is best-effort and does not
@@ -77,7 +76,7 @@ invalid token.
 `apps/mobile/eas.json` provides:
 
 - `development`: internal development client;
-- `preview`: installable internal build, with Android APK output;
+- `preview`: installable internal iOS build;
 - `ios-simulator`: preview build for the simulator;
 - `production`: auto-incremented store build.
 
@@ -100,8 +99,6 @@ Use:
 
 ```bash
 pnpm --filter @tempo/mobile exec expo install --check
-pnpm --filter @tempo/mobile exec expo export --platform android \
-  --output-dir /tmp/tempo-mobile-export
 pnpm --filter @tempo/mobile exec expo export --platform ios \
   --output-dir /tmp/tempo-mobile-ios-export
 ```

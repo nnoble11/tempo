@@ -17,14 +17,6 @@ export const registerPushEndpoint =
       return "not_configured";
     }
 
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("daily-briefing", {
-        name: "Daily briefing",
-        importance: Notifications.AndroidImportance.DEFAULT,
-        vibrationPattern: [0, 200],
-      });
-    }
-
     const currentPermissions = await Notifications.getPermissionsAsync();
     const permissions =
       currentPermissions.status === Notifications.PermissionStatus.GRANTED

@@ -9,7 +9,6 @@ supersede an accepted ADR rather than silently reversing it.
 
 ## Accepted decisions
 
-- [ADR-001: Mobile-first with a web companion](./ADR-001-mobile-first.md)
 - [ADR-002: Canonical briefing model](./ADR-002-canonical-briefing.md)
 - [ADR-003: Reusable global intelligence layer](./ADR-003-reusable-intelligence.md)
 - [ADR-004: PostgreSQL first](./ADR-004-postgresql-first.md)
@@ -25,6 +24,11 @@ supersede an accepted ADR rather than silently reversing it.
 - [ADR-014: Verified destinations and local quiet hours](./ADR-014-verified-destinations-and-quiet-hours.md)
 - [ADR-015: PostgreSQL story-intelligence jobs with a replaceable processor](./ADR-015-postgresql-story-intelligence-jobs.md)
 - [ADR-016: Deterministic isolated test environment](./ADR-016-deterministic-test-environment.md)
+- [ADR-017: Focus client development on iOS and web](./ADR-017-ios-and-web-only.md)
+
+## Superseded decisions
+
+- [ADR-001: Mobile-first with a web companion](./ADR-001-mobile-first.md)
 
 ## Template
 

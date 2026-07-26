@@ -1,6 +1,7 @@
 # ADR-001: Mobile-first with a web companion
 
-Status: Accepted  
+Status: Superseded by [ADR-017](./ADR-017-ios-and-web-only.md)
+
 Date: 2026-07-17
 
 ## Context
@@ -12,14 +13,14 @@ management, search, and deeper reading.
 
 ## Decision
 
-Use Expo with React Native for iOS and Android. Use Next.js for the responsive
-web companion. Share TypeScript contracts and design tokens where practical,
-without forcing platform-specific user-interface code into a single abstraction.
+Use a shared native client strategy with a responsive web companion. This
+decision's original platform scope is superseded by ADR-017; its mobile-first,
+canonical-briefing, and client-neutral API principles remain valid.
 
 ## Alternatives considered
 
 - Responsive web application only
-- Separate native iOS and Android applications
+- Separate native applications
 - Desktop-first web application
 
 ## Consequences

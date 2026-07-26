@@ -56,11 +56,6 @@ jobs:
       - name: Check Expo dependencies
         run: pnpm --filter @tempo/mobile exec expo install --check
 
-      - name: Export Android bundle
-        run:
-          pnpm --filter @tempo/mobile exec expo export --platform android
-          --output-dir "$RUNNER_TEMP/tempo-android"
-
       - name: Export iOS bundle
         run:
           pnpm --filter @tempo/mobile exec expo export --platform ios
