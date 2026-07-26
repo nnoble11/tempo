@@ -19,6 +19,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../src/app.js";
 import type { AccessTokenVerifier, AuthPrincipal } from "../src/auth.js";
+import { createUnusedDependencies } from "./test-dependencies.js";
 
 const aliceId = "00000000-0000-4000-8000-000000000001";
 const bobId = "00000000-0000-4000-8000-000000000002";
@@ -151,6 +152,10 @@ class TestAccountRepository implements AccountRepository {
     return Promise.reject(new Error("Unused test method."));
   }
 
+  public deleteInterest(): Promise<boolean> {
+    return Promise.reject(new Error("Unused test method."));
+  }
+
   public completeOnboarding(): Promise<CompleteOnboardingResult> {
     return Promise.reject(new Error("Unused test method."));
   }
@@ -171,6 +176,24 @@ class TestBriefingRepository implements BriefingRepository {
 
   public getBriefingByGenerationKey(): Promise<CanonicalBriefing | null> {
     return Promise.reject(new Error("Unused test method."));
+  }
+
+  public listBriefings() {
+    return Promise.resolve({
+      items: [
+        {
+          id: briefing.id,
+          scheduledFor: briefing.scheduledFor,
+          generatedAt: briefing.generatedAt,
+          status: briefing.status,
+          overview: briefing.overview,
+          targetMinutes: briefing.targetMinutes,
+          estimatedSeconds: briefing.estimatedSeconds,
+          itemCount: briefing.items.length,
+        },
+      ],
+      nextCursor: null,
+    });
   }
 
   public recordInteraction(
@@ -248,6 +271,7 @@ afterEach(async () => {
 
 const createApp = () => {
   const app = buildApp({
+    ...createUnusedDependencies(),
     accountRepository: new TestAccountRepository(),
     briefingRepository: new TestBriefingRepository(),
     deliveryRepository: new TestDeliveryRepository(),
@@ -273,6 +297,22 @@ describe("canonical briefing routes", () => {
         id: briefingId,
         items: [{ id: briefingItemId }],
       },
+    });
+  });
+
+  it("returns paginated briefing history", async () => {
+    const response = await createApp().inject({
+      method: "GET",
+      url: "/v1/briefings?limit=10",
+      headers: {
+        authorization: "Bearer alice-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      items: [{ id: briefingId, itemCount: 1 }],
+      nextCursor: null,
     });
   });
 

@@ -9,6 +9,8 @@ import {
   IdempotencyConflictError,
   PostgresAccountRepository,
   PostgresBriefingRepository,
+  PostgresCalendarRepository,
+  PostgresLibraryRepository,
   PostgresSourceRepository,
   PostgresStoryRepository,
   runMigrations,
@@ -47,7 +49,9 @@ describe("canonical briefing repository", () => {
   let postgres: TestPostgres;
   let pool: Pool;
   let briefingRepository: PostgresBriefingRepository;
+  let calendarRepository: PostgresCalendarRepository;
   let generationRequest: GroundedBriefingGenerationRequest;
+  let libraryRepository: PostgresLibraryRepository;
   let storyRepository: PostgresStoryRepository;
   let storyDraft: StoryIntelligenceDraft;
 
@@ -63,6 +67,8 @@ describe("canonical briefing repository", () => {
     const sourceRepository = new PostgresSourceRepository(pool);
     storyRepository = new PostgresStoryRepository(pool);
     briefingRepository = new PostgresBriefingRepository(pool);
+    calendarRepository = new PostgresCalendarRepository(pool);
+    libraryRepository = new PostgresLibraryRepository(pool);
 
     await accountRepository.ensureUser({
       id: aliceId,
@@ -300,5 +306,220 @@ describe("canonical briefing repository", () => {
     expect(reloaded?.items[0]?.claims[0]?.text).toBe(
       "The mission will study changes in Earth's atmosphere.",
     );
+  });
+
+  it("lists briefing history and persists independent Saved and Later state", async () => {
+    const olderBriefing = await generateAndSaveGroundedBriefing({
+      writer: briefingRepository,
+      userId: aliceId,
+      idempotencyKey: "alice-2026-07-17-daily",
+      request: {
+        ...generationRequest,
+        scheduledFor: "2026-07-17T15:00:00.000Z",
+        generatedAt: "2026-07-17T14:55:00.000Z",
+        overview: "Yesterday's meaningful science update.",
+      },
+    });
+    const firstHistoryPage = await briefingRepository.listBriefings(aliceId, {
+      limit: 1,
+    });
+    expect(firstHistoryPage).toMatchObject({
+      items: [
+        {
+          itemCount: 1,
+          overview: generationRequest.overview,
+        },
+      ],
+    });
+    expect(firstHistoryPage.nextCursor).not.toBeNull();
+    if (firstHistoryPage.nextCursor === null) {
+      throw new Error("Expected a cursor for older briefing history.");
+    }
+    await expect(
+      briefingRepository.listBriefings(aliceId, {
+        limit: 1,
+        cursor: firstHistoryPage.nextCursor,
+      }),
+    ).resolves.toMatchObject({
+      items: [{ id: olderBriefing.id }],
+      nextCursor: null,
+    });
+
+    const briefing = await briefingRepository.getLatestBriefing(
+      aliceId,
+      "2026-07-18T15:01:00.000Z",
+    );
+    const item = briefing?.items[0];
+    if (briefing === null || briefing === undefined || item === undefined) {
+      throw new Error("The canonical briefing fixture was not found.");
+    }
+
+    await expect(
+      libraryRepository.updateItemState(bobId, item.id, { saved: true }),
+    ).resolves.toEqual({ found: false, state: null });
+
+    const [savedWrite, deferredWrite] = await Promise.all([
+      libraryRepository.updateItemState(aliceId, item.id, {
+        saved: true,
+      }),
+      libraryRepository.updateItemState(aliceId, item.id, {
+        deferred: true,
+      }),
+    ]);
+    expect(savedWrite.found).toBe(true);
+    expect(deferredWrite.found).toBe(true);
+    await expect(
+      libraryRepository.listBriefingItemStates(aliceId, briefing.id),
+    ).resolves.toMatchObject([
+      {
+        briefingItemId: item.id,
+        savedAt: expect.any(String),
+        deferredAt: expect.any(String),
+      },
+    ]);
+    const stored = await libraryRepository.updateItemState(aliceId, item.id, {
+      saved: true,
+      deferred: true,
+    });
+    expect(stored).toMatchObject({
+      found: true,
+      state: {
+        briefingItemId: item.id,
+        savedAt: expect.any(String),
+        deferredAt: expect.any(String),
+      },
+    });
+    await expect(
+      libraryRepository.listItems(aliceId, "saved", { limit: 10 }),
+    ).resolves.toMatchObject({
+      items: [{ item: { id: item.id }, briefing: { id: briefing.id } }],
+      nextCursor: null,
+    });
+    await expect(
+      libraryRepository.listItems(aliceId, "deferred", { limit: 10 }),
+    ).resolves.toMatchObject({
+      items: [{ item: { id: item.id }, briefing: { id: briefing.id } }],
+      nextCursor: null,
+    });
+
+    const deferredOnly = await libraryRepository.updateItemState(
+      aliceId,
+      item.id,
+      { saved: false },
+    );
+    expect(deferredOnly).toMatchObject({
+      found: true,
+      state: {
+        savedAt: null,
+        deferredAt: expect.any(String),
+      },
+    });
+    await expect(
+      libraryRepository.listItems(aliceId, "saved", { limit: 10 }),
+    ).resolves.toEqual({ items: [], nextCursor: null });
+
+    await expect(
+      libraryRepository.updateItemState(aliceId, item.id, {
+        deferred: false,
+      }),
+    ).resolves.toEqual({ found: true, state: null });
+    const persistedCount = await pool.query<{ count: number }>(
+      "SELECT COUNT(*)::INTEGER AS count FROM briefing_item_states",
+    );
+    expect(persistedCount.rows[0]?.count).toBe(0);
+  });
+
+  it("stores only free/busy calendar ranges and suggests a usable window", async () => {
+    const connection = await calendarRepository.connectDeviceCalendar(aliceId, {
+      displayName: "Nathan's iPhone",
+    });
+    const synchronized = await calendarRepository.syncAvailability(
+      aliceId,
+      connection.id,
+      {
+        timezone: "America/Los_Angeles",
+        rangeStartsAt: "2026-07-25T17:00:00.000Z",
+        rangeEndsAt: "2026-07-25T21:00:00.000Z",
+        busyWindows: [
+          {
+            startsAt: "2026-07-25T17:00:00.000Z",
+            endsAt: "2026-07-25T17:30:00.000Z",
+          },
+          {
+            startsAt: "2026-07-25T17:20:00.000Z",
+            endsAt: "2026-07-25T17:45:00.000Z",
+          },
+          {
+            startsAt: "2026-07-25T17:53:00.000Z",
+            endsAt: "2026-07-25T18:15:00.000Z",
+          },
+        ],
+      },
+    );
+    expect(synchronized).toMatchObject({
+      id: connection.id,
+      scope: "free_busy",
+      active: true,
+      lastSyncedAt: expect.any(String),
+    });
+    await expect(
+      calendarRepository.syncAvailability(bobId, connection.id, {
+        timezone: "UTC",
+        rangeStartsAt: "2026-07-25T17:00:00.000Z",
+        rangeEndsAt: "2026-07-25T18:00:00.000Z",
+        busyWindows: [],
+      }),
+    ).resolves.toBeNull();
+
+    await expect(
+      calendarRepository.getAvailability(
+        aliceId,
+        10,
+        "2026-07-25T17:10:00.000Z",
+      ),
+    ).resolves.toMatchObject({
+      connection: { id: connection.id, scope: "free_busy" },
+      suggestion: {
+        startsAt: "2026-07-25T18:15:00.000Z",
+        endsAt: "2026-07-25T21:00:00.000Z",
+        availableMinutes: 165,
+        suggestedBriefingMinutes: 5,
+      },
+    });
+
+    const busyWindowCount = await pool.query<{ count: number }>(
+      "SELECT COUNT(*)::INTEGER AS count FROM calendar_busy_windows WHERE connection_id = $1",
+      [connection.id],
+    );
+    expect(busyWindowCount.rows[0]?.count).toBe(2);
+    const privateColumns = await pool.query<{ column_name: string }>(
+      `
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE
+          table_name = 'calendar_busy_windows'
+          AND column_name IN ('title', 'description', 'location', 'attendees')
+      `,
+    );
+    expect(privateColumns.rows).toEqual([]);
+
+    await expect(
+      calendarRepository.disconnect(bobId, connection.id),
+    ).resolves.toBe(false);
+    await expect(
+      calendarRepository.disconnect(aliceId, connection.id),
+    ).resolves.toBe(true);
+    await expect(
+      calendarRepository.getAvailability(
+        aliceId,
+        2,
+        "2026-07-25T17:10:00.000Z",
+      ),
+    ).resolves.toEqual({
+      connection: null,
+      suggestion: null,
+      rangeStartsAt: null,
+      rangeEndsAt: null,
+    });
   });
 });

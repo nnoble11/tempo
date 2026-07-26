@@ -2,7 +2,9 @@ import {
   createDatabasePool,
   PostgresAccountRepository,
   PostgresBriefingRepository,
+  PostgresCalendarRepository,
   PostgresDeliveryRepository,
+  PostgresLibraryRepository,
   runMigrations,
 } from "@tempo/database";
 import { ProviderVerificationSender } from "@tempo/delivery";
@@ -24,7 +26,9 @@ if (config.migrateOnStart) {
 const app = buildApp({
   accountRepository: new PostgresAccountRepository(pool),
   briefingRepository: new PostgresBriefingRepository(pool),
+  calendarRepository: new PostgresCalendarRepository(pool),
   deliveryRepository: new PostgresDeliveryRepository(pool),
+  libraryRepository: new PostgresLibraryRepository(pool),
   allowedOrigins: config.allowedOrigins,
   deliveryVerificationSecret: config.deliveryVerificationSecret,
   verificationSender: new ProviderVerificationSender({

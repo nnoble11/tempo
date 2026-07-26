@@ -2,6 +2,7 @@ import type {
   CanonicalBriefing,
   CanonicalBriefingItem,
 } from "@tempo/contracts";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -18,6 +19,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../../auth/AuthProvider";
+import { AppNavigation } from "../../components/AppNavigation";
+import { fetchCalendarAvailability } from "../calendar/api";
+import {
+  useBriefingItemStates,
+  useUpdateBriefingItemState,
+} from "../library/hooks";
 import { darkPalette, lightPalette, type TempoPalette } from "../../theme";
 import { useRecordBriefingInteraction, useTodayBriefing } from "./hooks";
 import {
@@ -43,10 +50,13 @@ type ItemCardProps = {
   item: CanonicalBriefingItem;
   expanded: boolean;
   feedback: "useful" | "not_useful" | null;
+  saved: boolean;
+  deferred: boolean;
   palette: TempoPalette;
   onToggle: () => void;
   onFeedback: (event: "useful" | "not_useful") => void;
   onSave: () => void;
+  onDefer: () => void;
   onOpenCitation: (citationId: string, url: string) => void;
 };
 
@@ -67,10 +77,13 @@ function ItemCard({
   item,
   expanded,
   feedback,
+  saved,
+  deferred,
   palette,
   onToggle,
   onFeedback,
   onSave,
+  onDefer,
   onOpenCitation,
 }: ItemCardProps) {
   const styles = useMemo(() => createStyles(palette), [palette]);
@@ -200,7 +213,8 @@ function ItemCard({
           </Text>
         </Pressable>
         <Pressable
-          accessibilityLabel="Save this update"
+          accessibilityLabel={saved ? "Unsave this update" : "Save this update"}
+          accessibilityState={{ selected: saved }}
           accessibilityRole="button"
           onPress={onSave}
           style={({ pressed }) => [
@@ -208,7 +222,24 @@ function ItemCard({
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.saveText}>Save</Text>
+          <Text style={styles.saveText}>{saved ? "Saved" : "Save"}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel={
+            deferred
+              ? "Remove this update from Later"
+              : "Read this update later"
+          }
+          accessibilityState={{ selected: deferred }}
+          accessibilityRole="button"
+          onPress={onDefer}
+          style={({ pressed }) => [
+            styles.saveButton,
+            deferred && styles.actionButtonSelected,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.saveText}>{deferred ? "Later ✓" : "Later"}</Text>
         </Pressable>
       </View>
     </View>
@@ -230,6 +261,13 @@ export function TodayScreen() {
   >({});
   const [interactionError, setInteractionError] = useState<string | null>(null);
   const briefing = query.data?.briefing;
+  const itemStates = useBriefingItemStates(briefing?.id);
+  const updateItemState = useUpdateBriefingItemState();
+  const calendar = useQuery({
+    queryKey: ["calendar", "availability"],
+    queryFn: fetchCalendarAvailability,
+    staleTime: 5 * 60_000,
+  });
   const viewState = getTodayViewState({
     isPending: query.isPending,
     isError: query.isError,
@@ -331,27 +369,45 @@ export function TodayScreen() {
     );
   };
 
-  const saveItem = (item: CanonicalBriefingItem): void => {
-    if (briefing === null || briefing === undefined) {
-      return;
-    }
+  const saveItem = (item: CanonicalBriefingItem, saved: boolean): void => {
     setInteractionError(null);
-    interaction.mutate(
+    updateItemState.mutate(
       {
-        briefingId: briefing.id,
         briefingItemId: item.id,
-        interaction: {
-          eventType: "saved",
-          value: {},
-          idempotencyKey: interactionKey("saved", item.id),
-        },
+        input: { saved: !saved },
       },
       {
+        onSuccess: () => {
+          if (!saved) {
+            recordItemInteraction(item, "saved");
+          }
+        },
         onError: () => {
           setInteractionError(
             "This update wasn’t saved. Check your connection and try again.",
           );
         },
+      },
+    );
+  };
+
+  const deferItem = (item: CanonicalBriefingItem, deferred: boolean): void => {
+    setInteractionError(null);
+    updateItemState.mutate(
+      {
+        briefingItemId: item.id,
+        input: { deferred: !deferred },
+      },
+      {
+        onSuccess: () => {
+          if (!deferred) {
+            recordItemInteraction(item, "deferred");
+          }
+        },
+        onError: () =>
+          setInteractionError(
+            "This update wasn’t moved. Check your connection and try again.",
+          ),
       },
     );
   };
@@ -429,6 +485,7 @@ export function TodayScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
+        <AppNavigation palette={palette} />
         <View style={styles.header}>
           <View>
             <Text style={styles.wordmark}>tempo</Text>
@@ -441,17 +498,27 @@ export function TodayScreen() {
             <Text style={styles.durationLabel}>BRIEFING</Text>
           </View>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push("/settings")}
-          style={styles.settingsButton}
-        >
-          <Text style={styles.settingsText}>Delivery settings</Text>
-        </Pressable>
-
         <View style={styles.progressTrack}>
           <View style={styles.progressFill} />
         </View>
+
+        {calendar.data?.suggestion === null ||
+        calendar.data?.suggestion === undefined ? null : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push("/calendar")}
+            style={styles.calendarSuggestion}
+          >
+            <Text style={styles.eyebrow}>A GOOD MOMENT</Text>
+            <Text style={styles.calendarSuggestionTitle}>
+              You have {calendar.data.suggestion.availableMinutes} minutes.
+            </Text>
+            <Text style={styles.stateCopy}>
+              A {calendar.data.suggestion.suggestedBriefingMinutes}-minute
+              briefing fits before your next busy window.
+            </Text>
+          </Pressable>
+        )}
 
         <View style={styles.overviewCard}>
           <Text style={styles.eyebrow}>WHY TODAY MATTERS</Text>
@@ -476,22 +543,34 @@ export function TodayScreen() {
         )}
 
         <View style={styles.itemList}>
-          {briefing.items.map((item) => (
-            <ItemCard
-              key={item.id}
-              briefing={briefing}
-              item={item}
-              expanded={expandedItems.has(item.id)}
-              feedback={feedback[item.id] ?? null}
-              palette={palette}
-              onToggle={() => toggleExpanded(item)}
-              onFeedback={(eventType) => recordFeedback(item, eventType)}
-              onSave={() => saveItem(item)}
-              onOpenCitation={(citationId, url) =>
-                openCitation(item, citationId, url)
-              }
-            />
-          ))}
+          {briefing.items.map((item) => {
+            const state = itemStates.data?.find(
+              ({ briefingItemId }) => briefingItemId === item.id,
+            );
+            const saved =
+              state?.savedAt !== null && state?.savedAt !== undefined;
+            const deferred =
+              state?.deferredAt !== null && state?.deferredAt !== undefined;
+            return (
+              <ItemCard
+                key={item.id}
+                briefing={briefing}
+                item={item}
+                expanded={expandedItems.has(item.id)}
+                feedback={feedback[item.id] ?? null}
+                saved={saved}
+                deferred={deferred}
+                palette={palette}
+                onToggle={() => toggleExpanded(item)}
+                onFeedback={(eventType) => recordFeedback(item, eventType)}
+                onSave={() => saveItem(item, saved)}
+                onDefer={() => deferItem(item, deferred)}
+                onOpenCitation={(citationId, url) =>
+                  openCitation(item, citationId, url)
+                }
+              />
+            );
+          })}
         </View>
 
         <View style={styles.finished}>
@@ -592,6 +671,20 @@ const createStyles = (palette: TempoPalette) =>
       borderRadius: 20,
       borderWidth: 1,
       padding: 22,
+    },
+    calendarSuggestion: {
+      backgroundColor: palette.accentSoft,
+      borderColor: palette.accent,
+      borderRadius: 16,
+      borderWidth: 1,
+      gap: 8,
+      marginTop: 16,
+      padding: 16,
+    },
+    calendarSuggestionTitle: {
+      color: palette.text,
+      fontSize: 20,
+      fontWeight: "800",
     },
     eyebrow: {
       color: palette.accent,

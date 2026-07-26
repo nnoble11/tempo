@@ -127,6 +127,11 @@ const briefingRepository: BriefingRepository = {
   getBriefing: () => Promise.resolve(null),
   getLatestBriefing: () => Promise.resolve(null),
   getBriefingByGenerationKey: () => Promise.resolve(null),
+  listBriefings: () =>
+    Promise.resolve({
+      items: [],
+      nextCursor: null,
+    }),
   recordInteraction: () => Promise.resolve(null),
 };
 

@@ -42,6 +42,7 @@ export type AccountRepository = {
     userInterestId: string,
     update: UpdateUserInterest,
   ): Promise<UserInterest | null>;
+  deleteInterest(userId: string, userInterestId: string): Promise<boolean>;
   completeOnboarding(
     userId: string,
     input: CompleteOnboardingInput,
@@ -333,6 +334,7 @@ const listAllUserInterests = async (
       FROM user_interests ui
       INNER JOIN interests i ON i.id = ui.interest_id
       WHERE ui.user_id = $1
+        AND ui.deleted_at IS NULL
       ORDER BY ui.created_at, ui.id
     `,
     [userId],
@@ -367,7 +369,7 @@ const selectUserInterest = async (
         ui.last_interacted_at
       FROM user_interests ui
       INNER JOIN interests i ON i.id = ui.interest_id
-      WHERE ui.id = $1 AND ui.user_id = $2
+      WHERE ui.id = $1 AND ui.user_id = $2 AND ui.deleted_at IS NULL
     `,
     [userInterestId, userId],
   );
@@ -489,6 +491,8 @@ export class PostgresAccountRepository implements AccountRepository {
         INNER JOIN interests i ON i.id = ui.interest_id
         WHERE
           ui.user_id = $1
+          AND ui.deleted_at IS NULL
+          AND ($4::BOOLEAN IS NULL OR ui.active = $4)
           AND (
             $2::UUID IS NULL
             OR (ui.created_at, ui.id) < (
@@ -500,7 +504,7 @@ export class PostgresAccountRepository implements AccountRepository {
         ORDER BY ui.created_at DESC, ui.id DESC
         LIMIT $3
       `,
-      [userId, query.cursor ?? null, query.limit + 1],
+      [userId, query.cursor ?? null, query.limit + 1, query.active ?? null],
     );
 
     const hasNextPage = result.rows.length > query.limit;
@@ -517,42 +521,85 @@ export class PostgresAccountRepository implements AccountRepository {
     userInterestId: string,
     update: UpdateUserInterest,
   ): Promise<UserInterest | null> {
-    const result = await this.pool.query<{ id: string }>(
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query<{ interest_id: string }>(
+        `
+          UPDATE user_interests
+          SET
+            importance = COALESCE($3, importance),
+            expertise_level = COALESCE($4, expertise_level),
+            desired_depth = COALESCE($5, desired_depth),
+            alert_sensitivity = COALESCE($6, alert_sensitivity),
+            preferred_sources = COALESCE($7, preferred_sources),
+            blocked_sources = COALESCE($8, blocked_sources),
+            keywords = COALESCE($9, keywords),
+            excluded_keywords = COALESCE($10, excluded_keywords),
+            active = COALESCE($11, active),
+            updated_at = NOW()
+          WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL
+          RETURNING interest_id
+        `,
+        [
+          userInterestId,
+          userId,
+          update.importance ?? null,
+          update.expertiseLevel ?? null,
+          update.desiredDepth ?? null,
+          update.alertSensitivity ?? null,
+          update.preferredSources ?? null,
+          update.blockedSources ?? null,
+          update.keywords ?? null,
+          update.excludedKeywords ?? null,
+          update.active ?? null,
+        ],
+      );
+      const interestId = result.rows[0]?.interest_id;
+      if (interestId === undefined) {
+        await client.query("COMMIT");
+        return null;
+      }
+      await client.query(
+        `
+          UPDATE interests
+          SET
+            name = CASE WHEN $2 THEN $3 ELSE name END,
+            description = CASE WHEN $4 THEN $5 ELSE description END
+          WHERE id = $1
+        `,
+        [
+          interestId,
+          update.name !== undefined,
+          update.name ?? null,
+          "description" in update,
+          update.description ?? null,
+        ],
+      );
+      const updated = await selectUserInterest(client, userId, userInterestId);
+      await client.query("COMMIT");
+      return updated;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  public async deleteInterest(
+    userId: string,
+    userInterestId: string,
+  ): Promise<boolean> {
+    const result = await this.pool.query(
       `
         UPDATE user_interests
-        SET
-          importance = COALESCE($3, importance),
-          expertise_level = COALESCE($4, expertise_level),
-          desired_depth = COALESCE($5, desired_depth),
-          alert_sensitivity = COALESCE($6, alert_sensitivity),
-          preferred_sources = COALESCE($7, preferred_sources),
-          blocked_sources = COALESCE($8, blocked_sources),
-          keywords = COALESCE($9, keywords),
-          excluded_keywords = COALESCE($10, excluded_keywords),
-          active = COALESCE($11, active),
-          updated_at = NOW()
-        WHERE id = $1 AND user_id = $2
-        RETURNING id
+        SET active = FALSE, deleted_at = NOW(), updated_at = NOW()
+        WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL
       `,
-      [
-        userInterestId,
-        userId,
-        update.importance ?? null,
-        update.expertiseLevel ?? null,
-        update.desiredDepth ?? null,
-        update.alertSensitivity ?? null,
-        update.preferredSources ?? null,
-        update.blockedSources ?? null,
-        update.keywords ?? null,
-        update.excludedKeywords ?? null,
-        update.active ?? null,
-      ],
+      [userInterestId, userId],
     );
-
-    if (result.rows[0] === undefined) {
-      return null;
-    }
-    return selectUserInterest(this.pool, userId, userInterestId);
+    return result.rowCount === 1;
   }
 
   public async completeOnboarding(

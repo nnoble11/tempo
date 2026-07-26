@@ -1,5 +1,9 @@
 # Tempo iOS and web release status — 2026-07-25
 
+> Historical baseline. The five-feature closed-beta implementation and current
+> verification results are documented in
+> [closed-beta-core-2026-07-25.md](closed-beta-core-2026-07-25.md).
+
 ## Release recommendation
 
 **GO for continued shared web/API testing. Conditional GO for the next iOS test

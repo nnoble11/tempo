@@ -2,11 +2,14 @@ import { createHash } from "node:crypto";
 
 import {
   BriefingInteractionSchema,
+  BriefingHistoryPageSchema,
   CanonicalBriefingSchema,
   CreateBriefingInteractionSchema,
   SaveCanonicalBriefingCommandSchema,
   type BriefingInteraction,
+  type BriefingHistoryPage,
   type CanonicalBriefing,
+  type LibraryPageQuery,
 } from "@tempo/contracts";
 import type { Pool, PoolClient, QueryResultRow } from "pg";
 
@@ -34,6 +37,10 @@ export type BriefingRepository = {
     userId: string,
     idempotencyKey: string,
   ): Promise<CanonicalBriefing | null>;
+  listBriefings(
+    userId: string,
+    query: LibraryPageQuery,
+  ): Promise<BriefingHistoryPage>;
   recordInteraction(
     userId: string,
     briefingId: string,
@@ -439,6 +446,63 @@ export class PostgresBriefingRepository implements BriefingRepository {
     return briefingId === undefined
       ? null
       : loadBriefing(this.pool, userId, briefingId);
+  }
+
+  public async listBriefings(
+    userId: string,
+    query: LibraryPageQuery,
+  ): Promise<BriefingHistoryPage> {
+    const result = await this.pool.query<BriefingRow & { item_count: number }>(
+      `
+        SELECT
+          briefing.id,
+          briefing.user_id,
+          briefing.target_minutes,
+          briefing.actual_word_count,
+          briefing.estimated_seconds,
+          briefing.scheduled_for,
+          briefing.generated_at,
+          briefing.status,
+          briefing.overview,
+          briefing.prompt_version,
+          briefing.model_version,
+          briefing.created_at,
+          briefing.updated_at,
+          COUNT(item.id)::INTEGER AS item_count
+        FROM briefings briefing
+        LEFT JOIN briefing_items item ON item.briefing_id = briefing.id
+        WHERE
+          briefing.user_id = $1
+          AND (
+            $2::UUID IS NULL
+            OR (briefing.scheduled_for, briefing.id) < (
+              SELECT cursor_briefing.scheduled_for, cursor_briefing.id
+              FROM briefings cursor_briefing
+              WHERE cursor_briefing.id = $2 AND cursor_briefing.user_id = $1
+            )
+          )
+        GROUP BY briefing.id
+        ORDER BY briefing.scheduled_for DESC, briefing.id DESC
+        LIMIT $3
+      `,
+      [userId, query.cursor ?? null, query.limit + 1],
+    );
+    const hasNextPage = result.rows.length > query.limit;
+    const rows = result.rows.slice(0, query.limit);
+    return BriefingHistoryPageSchema.parse({
+      items: rows.map((row) => ({
+        id: row.id,
+        scheduledFor: toIsoString(row.scheduled_for),
+        generatedAt: toIsoString(row.generated_at),
+        status: row.status,
+        overview: row.overview,
+        targetMinutes: row.target_minutes,
+        estimatedSeconds: row.estimated_seconds,
+        itemCount: row.item_count,
+      })),
+      nextCursor:
+        hasNextPage && rows.at(-1) !== undefined ? rows.at(-1)?.id : null,
+    });
   }
 
   public async recordInteraction(

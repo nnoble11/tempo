@@ -1,7 +1,9 @@
 import {
   BriefingInteractionSchema,
+  BriefingHistoryPageSchema,
   CanonicalBriefingSchema,
   CreateBriefingInteractionSchema,
+  LibraryPageQuerySchema,
   TodayBriefingResponseSchema,
 } from "@tempo/contracts";
 import type { AccountRepository, BriefingRepository } from "@tempo/database";
@@ -55,6 +57,14 @@ export const registerBriefingRoutes = (
       new Date().toISOString(),
     );
     return TodayBriefingResponseSchema.parse({ briefing });
+  });
+
+  app.get("/v1/briefings", async (request) => {
+    const userId = await authenticate(request, dependencies);
+    const query = LibraryPageQuerySchema.parse(request.query);
+    return BriefingHistoryPageSchema.parse(
+      await dependencies.briefingRepository.listBriefings(userId, query),
+    );
   });
 
   app.get("/v1/briefings/:briefingId", async (request, reply) => {

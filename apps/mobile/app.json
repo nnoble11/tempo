@@ -13,7 +13,18 @@
         "usesNonExemptEncryption": false
       }
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-notifications"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Tempo reads event times only to find optional free windows. Event titles, locations, attendees, and notes never leave this device.",
+          "remindersPermission": false
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },

@@ -25,6 +25,8 @@ supersede an accepted ADR rather than silently reversing it.
 - [ADR-015: PostgreSQL story-intelligence jobs with a replaceable processor](./ADR-015-postgresql-story-intelligence-jobs.md)
 - [ADR-016: Deterministic isolated test environment](./ADR-016-deterministic-test-environment.md)
 - [ADR-017: Focus client development on iOS and web](./ADR-017-ios-and-web-only.md)
+- [ADR-018: Separate durable item state from behavioral interactions](./ADR-018-durable-item-state.md)
+- [ADR-019: Synchronize time-only device calendar availability](./ADR-019-device-free-busy-calendar.md)
 
 ## Superseded decisions
 

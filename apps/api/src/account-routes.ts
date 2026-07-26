@@ -126,4 +126,22 @@ export const registerAccountRoutes = (
     }
     return UserInterestSchema.parse(interest);
   });
+
+  app.delete("/v1/interests/:userInterestId", async (request, reply) => {
+    const { principal } = await authenticate(request, dependencies);
+    const { userInterestId } = InterestParametersSchema.parse(request.params);
+    const deleted = await dependencies.accountRepository.deleteInterest(
+      principal.userId,
+      userInterestId,
+    );
+    if (!deleted) {
+      return reply.status(404).send({
+        error: {
+          code: "NOT_FOUND",
+          message: "The interest was not found.",
+        },
+      });
+    }
+    return reply.status(204).send();
+  });
 };

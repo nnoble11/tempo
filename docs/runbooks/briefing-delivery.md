@@ -94,3 +94,29 @@ logs; do not blindly resend.
 - Monitoring alerts on terminal failures, high retry counts, and provider error
   rates.
 - Alert on Expo receipts that exhaust reconciliation retries.
+
+## Physical-iPhone push acceptance
+
+Run this after each preview build or notification configuration change:
+
+1. Install an iOS preview build with `EXPO_PUBLIC_EAS_PROJECT_ID` and the test
+   API/Auth public variables.
+2. Sign in as the dedicated test user and enable Mobile push in Settings.
+3. Grant iOS notification permission and confirm one enabled push endpoint is
+   visible in Settings. Do not copy the token into the test report.
+4. Save a daily local time a few minutes ahead and confirm the displayed IANA
+   timezone is correct.
+5. Run the scheduled generation and delivery cycles through the normal scheduler
+   or one-shot commands.
+6. Confirm exactly one push arrives for the local date, outside quiet hours, and
+   opens the matching owned canonical briefing.
+7. Relaunch and foreground the app, then confirm endpoint upsert does not create
+   duplicate active destinations.
+8. Disable Mobile push and confirm later generation schedules no push delivery
+   for that user.
+9. Inspect the delivery and receipt records for bounded attempts, provider
+   identifiers, accepted status, and absence of tokens or destinations in logs.
+
+Simulator notification rendering is useful for UI navigation checks but does not
+validate APNs permission, a physical Expo push token, remote delivery, or token
+rotation.

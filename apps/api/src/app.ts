@@ -15,13 +15,23 @@ import {
   type BriefingRouteDependencies,
 } from "./briefing-routes.js";
 import {
+  registerCalendarRoutes,
+  type CalendarRouteDependencies,
+} from "./calendar-routes.js";
+import {
   registerDeliveryRoutes,
   type DeliveryRouteDependencies,
 } from "./delivery-routes.js";
+import {
+  registerLibraryRoutes,
+  type LibraryRouteDependencies,
+} from "./library-routes.js";
 
 export type AppDependencies = AccountRouteDependencies &
   BriefingRouteDependencies &
+  CalendarRouteDependencies &
   DeliveryRouteDependencies & {
+    libraryRepository: LibraryRouteDependencies["libraryRepository"];
     allowedOrigins?: readonly string[];
   };
 
@@ -43,6 +53,8 @@ export const buildApp = (dependencies: AppDependencies): FastifyInstance => {
 
   registerAccountRoutes(app, dependencies);
   registerBriefingRoutes(app, dependencies);
+  registerLibraryRoutes(app, dependencies);
+  registerCalendarRoutes(app, dependencies);
   registerDeliveryRoutes(app, dependencies);
 
   app.setErrorHandler((error, request, reply) => {

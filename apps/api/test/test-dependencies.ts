@@ -1,15 +1,25 @@
 import type {
   BriefingInteraction,
+  BriefingHistoryPage,
+  BriefingItemState,
+  CalendarAvailability,
+  CalendarConnection,
   CanonicalBriefing,
   CompleteOnboardingResult,
   Delivery,
   DeliveryEndpoint,
   InterestPage,
+  LibraryItemPage,
   UserInterest,
   UserPreferences,
   UserProfile,
 } from "@tempo/contracts";
-import type { AccountRepository, BriefingRepository } from "@tempo/database";
+import type {
+  AccountRepository,
+  BriefingRepository,
+  CalendarRepository,
+  LibraryRepository,
+} from "@tempo/database";
 import type {
   DeliveryConfiguration,
   DeliveryRepository,
@@ -42,6 +52,10 @@ class UnavailableAccountRepository implements AccountRepository {
     return Promise.reject(new Error("Account repository is unavailable."));
   }
 
+  public deleteInterest(): Promise<boolean> {
+    return Promise.reject(new Error("Account repository is unavailable."));
+  }
+
   public completeOnboarding(): Promise<CompleteOnboardingResult> {
     return Promise.reject(new Error("Account repository is unavailable."));
   }
@@ -64,8 +78,47 @@ class UnavailableBriefingRepository implements BriefingRepository {
     return Promise.reject(new Error("Briefing repository is unavailable."));
   }
 
+  public listBriefings(): Promise<BriefingHistoryPage> {
+    return Promise.reject(new Error("Briefing repository is unavailable."));
+  }
+
   public recordInteraction(): Promise<BriefingInteraction | null> {
     return Promise.reject(new Error("Briefing repository is unavailable."));
+  }
+}
+
+class UnavailableLibraryRepository implements LibraryRepository {
+  public updateItemState(): Promise<{
+    found: false;
+    state: null;
+  }> {
+    return Promise.reject(new Error("Library repository is unavailable."));
+  }
+
+  public listBriefingItemStates(): Promise<BriefingItemState[]> {
+    return Promise.reject(new Error("Library repository is unavailable."));
+  }
+
+  public listItems(): Promise<LibraryItemPage> {
+    return Promise.reject(new Error("Library repository is unavailable."));
+  }
+}
+
+class UnavailableCalendarRepository implements CalendarRepository {
+  public connectDeviceCalendar(): Promise<CalendarConnection> {
+    return Promise.reject(new Error("Calendar repository is unavailable."));
+  }
+
+  public syncAvailability(): Promise<CalendarConnection | null> {
+    return Promise.reject(new Error("Calendar repository is unavailable."));
+  }
+
+  public getAvailability(): Promise<CalendarAvailability> {
+    return Promise.reject(new Error("Calendar repository is unavailable."));
+  }
+
+  public disconnect(): Promise<boolean> {
+    return Promise.reject(new Error("Calendar repository is unavailable."));
   }
 }
 
@@ -130,7 +183,9 @@ class UnavailableDeliveryRepository implements DeliveryRepository {
 export const createUnusedDependencies = (): AppDependencies => ({
   accountRepository: new UnavailableAccountRepository(),
   briefingRepository: new UnavailableBriefingRepository(),
+  calendarRepository: new UnavailableCalendarRepository(),
   deliveryRepository: new UnavailableDeliveryRepository(),
+  libraryRepository: new UnavailableLibraryRepository(),
   deliveryVerificationSecret: "test-verification-secret-at-least-32-characters",
   verificationSender: {
     sendCode: () =>

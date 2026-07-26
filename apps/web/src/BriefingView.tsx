@@ -1,6 +1,19 @@
 "use client";
 
-import type { CanonicalBriefing } from "@tempo/contracts";
+import type {
+  BriefingItemState,
+  CalendarAvailability,
+  CanonicalBriefing,
+} from "@tempo/contracts";
+import { useEffect, useState } from "react";
+
+import {
+  fetchBriefingItemStates,
+  fetchCalendarAvailability,
+  recordBriefingInteraction,
+  updateBriefingItemState,
+} from "./api";
+import { AppNavigation } from "./AppNavigation";
 
 const uniqueSources = (briefing: CanonicalBriefing, itemIndex: number) => {
   const item = briefing.items[itemIndex];
@@ -23,12 +36,56 @@ const itemConfidenceLabel = (
 };
 
 export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
+  const [states, setStates] = useState<BriefingItemState[]>([]);
+  const [calendar, setCalendar] = useState<CalendarAvailability | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void Promise.all([
+      fetchBriefingItemStates(briefing.id).then(setStates),
+      fetchCalendarAvailability().then(setCalendar),
+    ]).catch(() => {
+      // The canonical briefing remains readable when optional state is offline.
+    });
+  }, [briefing.id]);
+
+  const toggleState = async (
+    itemId: string,
+    kind: "saved" | "deferred",
+    enabled: boolean,
+  ): Promise<void> => {
+    try {
+      const updated = await updateBriefingItemState(
+        itemId,
+        kind === "saved" ? { saved: !enabled } : { deferred: !enabled },
+      );
+      setStates((current) => [
+        ...current.filter(({ briefingItemId }) => briefingItemId !== itemId),
+        ...(updated === null ? [] : [updated]),
+      ]);
+      if (!enabled) {
+        void recordBriefingInteraction(briefing.id, itemId, {
+          eventType: kind,
+          value: {},
+          idempotencyKey: `web:${kind}:${itemId}`,
+        }).catch(() => {
+          // Current state is canonical; a missing behavioral event must not
+          // roll back a successful user-visible Save or Later transition.
+        });
+      }
+      setMessage(kind === "saved" ? "Saved state updated." : "Later updated.");
+    } catch {
+      setMessage("That change did not save. Try again.");
+    }
+  };
+
   return (
     <main className="shell">
       <header className="topbar">
         <a className="wordmark" href="/">
           tempo
         </a>
+        <AppNavigation />
         <div className="timePill">
           {Math.ceil(briefing.estimatedSeconds / 60)} min
         </div>
@@ -40,45 +97,87 @@ export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
           {briefing.items.length} meaningful updates · one clear end
         </p>
       </section>
+      {calendar?.suggestion === null ||
+      calendar?.suggestion === undefined ? null : (
+        <a className="calendarBanner" href="/calendar">
+          <span className="eyebrow">A GOOD MOMENT</span>
+          <strong>
+            You have {calendar.suggestion.availableMinutes} minutes.
+          </strong>
+          <span>
+            A {calendar.suggestion.suggestedBriefingMinutes}-minute briefing
+            fits before your next busy window.
+          </span>
+        </a>
+      )}
+      {message === null ? null : (
+        <p aria-live="polite" className="inlineNotice">
+          {message}
+        </p>
+      )}
       <div className="briefingGrid">
-        {briefing.items.map((item, index) => (
-          <article className="story" key={item.id}>
-            <div className="storyMeta">
-              <span>{String(item.position).padStart(2, "0")}</span>
-              <span>{Math.ceil(item.estimatedSeconds / 60)} min</span>
-            </div>
-            <h2>{item.headline}</h2>
-            <p className="takeaway">{item.takeaway}</p>
-            <div className="explanation">
-              <p className="eyebrow">WHY IT MATTERS TO YOU</p>
-              <p>{item.whyItMatters}</p>
-              <p className="eyebrow">WHAT CHANGED</p>
-              <p>{item.whatChanged}</p>
-              {itemConfidenceLabel(item) === null ? null : (
-                <>
-                  <p className="eyebrow">CONFIDENCE</p>
-                  <p>{itemConfidenceLabel(item)}</p>
-                </>
-              )}
-            </div>
-            <div className="sources">
-              {uniqueSources(briefing, index).map((source) => (
-                <a
-                  href={source.canonicalUrl}
-                  key={source.citationId}
-                  rel="noreferrer"
-                  target="_blank"
+        {briefing.items.map((item, index) => {
+          const state = states.find(
+            ({ briefingItemId }) => briefingItemId === item.id,
+          );
+          const saved = state?.savedAt !== null && state?.savedAt !== undefined;
+          const deferred =
+            state?.deferredAt !== null && state?.deferredAt !== undefined;
+          return (
+            <article className="story" key={item.id}>
+              <div className="storyMeta">
+                <span>{String(item.position).padStart(2, "0")}</span>
+                <span>{Math.ceil(item.estimatedSeconds / 60)} min</span>
+              </div>
+              <h2>{item.headline}</h2>
+              <p className="takeaway">{item.takeaway}</p>
+              <div className="explanation">
+                <p className="eyebrow">WHY IT MATTERS TO YOU</p>
+                <p>{item.whyItMatters}</p>
+                <p className="eyebrow">WHAT CHANGED</p>
+                <p>{item.whatChanged}</p>
+                {itemConfidenceLabel(item) === null ? null : (
+                  <>
+                    <p className="eyebrow">CONFIDENCE</p>
+                    <p>{itemConfidenceLabel(item)}</p>
+                  </>
+                )}
+              </div>
+              <div className="sources">
+                {uniqueSources(briefing, index).map((source) => (
+                  <a
+                    href={source.canonicalUrl}
+                    key={source.citationId}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <span>
+                      <strong>{source.publisher}</strong>
+                      <small>{source.sourceTitle}</small>
+                    </span>
+                    <span aria-hidden>↗</span>
+                  </a>
+                ))}
+              </div>
+              <div className="actionRow">
+                <button
+                  className={saved ? "selectedAction" : ""}
+                  onClick={() => void toggleState(item.id, "saved", saved)}
                 >
-                  <span>
-                    <strong>{source.publisher}</strong>
-                    <small>{source.sourceTitle}</small>
-                  </span>
-                  <span aria-hidden>↗</span>
-                </a>
-              ))}
-            </div>
-          </article>
-        ))}
+                  {saved ? "Saved ✓" : "Save"}
+                </button>
+                <button
+                  className={deferred ? "selectedAction" : ""}
+                  onClick={() =>
+                    void toggleState(item.id, "deferred", deferred)
+                  }
+                >
+                  {deferred ? "Later ✓" : "Later"}
+                </button>
+              </div>
+            </article>
+          );
+        })}
       </div>
       <footer className="done">
         <span />

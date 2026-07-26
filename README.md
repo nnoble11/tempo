@@ -16,7 +16,9 @@ atomic preference and interest onboarding; credential-free first-party
 ingestion; lease-backed asynchronous story intelligence; scheduled per-user
 selection and grounded generation; immutable canonical briefing persistence;
 verified, quiet-hour-aware delivery; Expo push receipt cleanup; feedback
-interactions; and canonical mobile/web reading routes.
+interactions; post-onboarding interest management; durable Saved and Later
+collections; canonical briefing history; privacy-preserving device-calendar
+availability; and matching iOS/web reading routes.
 
 Onboarding, canonical generation, delivery scheduling, and feedback writes are
 user-scoped and idempotent. Scheduled workers use observable PostgreSQL records,
@@ -184,8 +186,20 @@ The current implementation proves these invariants:
     intelligence job.
 25. Test bootstrap, repeat bootstrap, and guarded reset are exercised against a
     temporary real PostgreSQL instance.
+26. Interest edits, mute/reactivate, and soft deletion remain user-scoped while
+    historical briefing evidence survives.
+27. Saved and Later state persists independently across iOS and web and always
+    references the immutable canonical item.
+28. Briefing history is cursor-paginated, user-owned, and opens the same
+    canonical detail used by notification links.
+29. Calendar synchronization stores only merged busy timestamps; strict
+    contracts reject private event fields and disconnect deletes the windows.
+30. Push registration refreshes the physical-device token on launch/foreground,
+    while daily scheduling, quiet hours, receipt cleanup, and UUID-only deep
+    links remain independently tested.
 
-Live calendar-provider authorization, subscriptions, commercial recommendations,
-and model-based semantic intelligence remain outside the implemented product
-slice. Recommendation preferences exist but remain disabled by default and do
-not affect editorial ranking.
+Provider-backed continuous calendar authorization, subscriptions, commercial
+recommendations, and model-based semantic intelligence remain outside the
+implemented product slice. Recommendation preferences exist but remain disabled
+by default and do not affect editorial ranking. Real APNs/Expo delivery and
+device calendar permission require physical-iPhone acceptance testing.

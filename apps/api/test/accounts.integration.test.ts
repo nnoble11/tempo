@@ -2,7 +2,9 @@ import {
   createDatabasePool,
   PostgresAccountRepository,
   PostgresBriefingRepository,
+  PostgresCalendarRepository,
   PostgresDeliveryRepository,
+  PostgresLibraryRepository,
   runMigrations,
 } from "@tempo/database";
 import type { Pool } from "pg";
@@ -65,13 +67,16 @@ describe("account persistence and authorization", () => {
       "0008_canonical_deliveries.sql",
       "0009_delivery_safety_and_push_receipts.sql",
       "0010_story_intelligence_jobs.sql",
+      "0011_closed_beta_core.sql",
     ]);
     expect(secondMigration.applied).toEqual([]);
 
     app = buildApp({
       accountRepository: new PostgresAccountRepository(pool),
       briefingRepository: new PostgresBriefingRepository(pool),
+      calendarRepository: new PostgresCalendarRepository(pool),
       deliveryRepository: new PostgresDeliveryRepository(pool),
+      libraryRepository: new PostgresLibraryRepository(pool),
       accessTokenVerifier: new TestAccessTokenVerifier(),
       deliveryVerificationSecret:
         "test-verification-secret-at-least-32-characters",
@@ -246,14 +251,80 @@ describe("account persistence and authorization", () => {
         authorization: "Bearer alice-token",
       },
       payload: {
+        name: "Climate science and policy",
+        description: "Material research, missions, and policy changes",
         desiredDepth: "deep",
+        active: false,
       },
     });
     expect(ownerUpdate?.statusCode).toBe(200);
     expect(ownerUpdate?.json()).toMatchObject({
       id: aliceInterest.id,
+      name: "Climate science and policy",
       desiredDepth: "deep",
+      active: false,
     });
+
+    const activeList = await app?.inject({
+      method: "GET",
+      url: "/v1/interests?limit=10&active=true",
+      headers: {
+        authorization: "Bearer alice-token",
+      },
+    });
+    expect(activeList?.json()).not.toMatchObject({
+      items: [{ id: aliceInterest.id }],
+    });
+
+    const reactivated = await app?.inject({
+      method: "PATCH",
+      url: `/v1/interests/${aliceInterest.id}`,
+      headers: {
+        authorization: "Bearer alice-token",
+      },
+      payload: {
+        active: true,
+      },
+    });
+    expect(reactivated?.statusCode).toBe(200);
+    expect(reactivated?.json()).toMatchObject({
+      id: aliceInterest.id,
+      active: true,
+    });
+
+    const forbiddenDelete = await app?.inject({
+      method: "DELETE",
+      url: `/v1/interests/${aliceInterest.id}`,
+      headers: {
+        authorization: "Bearer bob-token",
+      },
+    });
+    expect(forbiddenDelete?.statusCode).toBe(404);
+
+    const ownerDelete = await app?.inject({
+      method: "DELETE",
+      url: `/v1/interests/${aliceInterest.id}`,
+      headers: {
+        authorization: "Bearer alice-token",
+      },
+    });
+    expect(ownerDelete?.statusCode).toBe(204);
+
+    const afterDelete = await app?.inject({
+      method: "GET",
+      url: "/v1/interests?limit=10",
+      headers: {
+        authorization: "Bearer alice-token",
+      },
+    });
+    expect(afterDelete?.json()).not.toMatchObject({
+      items: [{ id: aliceInterest.id }],
+    });
+    const retainedHistory = await pool.query<{ deleted_at: Date | null }>(
+      "SELECT deleted_at FROM user_interests WHERE id = $1 AND user_id = $2",
+      [aliceInterest.id, alice.userId],
+    );
+    expect(retainedHistory.rows[0]?.deleted_at).toBeInstanceOf(Date);
   });
 
   it("completes onboarding atomically and idempotently", async () => {

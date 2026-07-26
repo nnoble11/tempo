@@ -1,7 +1,7 @@
 # API
 
-Status: Authenticated account, briefing, verification, and delivery endpoints  
-Last updated: 2026-07-18
+Status: Authenticated closed-beta account, library, calendar, and delivery API
+Last updated: 2026-07-25
 
 The Fastify API uses versioned REST routes under `/v1`. Boundary payloads are
 validated with shared Zod contracts.
@@ -84,6 +84,7 @@ Returns a cursor-paginated interest page. Query parameters:
 
 - `limit`: 1 through 100, default 20
 - `cursor`: opaque user-interest UUID returned as `nextCursor`
+- `active`: optional `true` or `false` filter
 
 ### `POST /v1/interests`
 
@@ -92,9 +93,16 @@ settings.
 
 ### `PATCH /v1/interests/:userInterestId`
 
-Updates user-specific importance, depth, expertise, alert sensitivity, source
-controls, keywords, or active state. Ownership is scoped by the verified token
-subject.
+Updates the name, description, user-specific importance, depth, expertise, alert
+sensitivity, source controls, keywords, or active state. Setting `active` to
+false mutes the interest; setting it to true reactivates it. Ownership is scoped
+by the verified token subject.
+
+### `DELETE /v1/interests/:userInterestId`
+
+Soft-deletes an owned topic, entity, or natural-language rule from future
+selection while retaining the relationship required by historical briefing
+evidence. Missing and cross-user IDs both return `NOT_FOUND`.
 
 ### `GET /v1/briefings/today`
 
@@ -109,6 +117,13 @@ briefing whose scheduled time is not in the future:
 
 `briefing` is `null` when no briefing is available. A present briefing includes
 ordered items, transparent ranking snapshots, grounded claims, and citations.
+
+### `GET /v1/briefings`
+
+Returns cursor-paginated canonical briefing history in reverse scheduled order.
+Each summary includes status, overview, target and estimated duration, and item
+count. `limit` accepts 1 through 100 and `cursor` is the prior page's
+`nextCursor`.
 
 ### `GET /v1/briefings/:briefingId`
 
@@ -129,6 +144,55 @@ contains:
 The first successful write returns `201`. Retrying the same user/key/payload
 returns the original interaction. Reusing the key for different input returns an
 idempotency conflict.
+
+### `PUT /v1/briefing-items/:briefingItemId/state`
+
+Sets durable current state with one or both optional booleans:
+
+- `saved`
+- `deferred`
+
+At least one field is required. A present state returns `200`; removing both
+states returns `204`. The item must belong to the authenticated user.
+
+### `GET /v1/briefings/:briefingId/item-states`
+
+Returns current Saved/Later state for all owned items in one briefing.
+
+### `GET /v1/library/saved`
+
+### `GET /v1/library/later`
+
+Return cursor-paginated canonical items in the selected collection. Each result
+includes its current state, briefing summary, and immutable canonical item.
+
+### `PUT /v1/calendar/connections/device`
+
+Enables one owned `device` connection with fixed `free_busy` scope. This route
+does not accept provider tokens or event data.
+
+### `POST /v1/calendar/connections/:connectionId/availability`
+
+Replaces the synchronized availability range. The strict body accepts only:
+
+- IANA `timezone`;
+- `rangeStartsAt` and `rangeEndsAt`, no more than seven days apart;
+- at most 500 `busyWindows`, each containing only `startsAt` and `endsAt` inside
+  the synchronized range.
+
+Unknown private-event fields are rejected.
+
+### `GET /v1/calendar/availability`
+
+Returns the owned connection, synchronized range, and first qualifying
+free-window suggestion. `minimumMinutes` accepts 2 through 60; optional `now`
+supports deterministic testing.
+
+### `DELETE /v1/calendar/connections/:connectionId`
+
+Disables the owned connection, deletes all synchronized busy windows, clears
+range metadata, and disables calendar suggestions. Missing and cross-user IDs
+both return `NOT_FOUND`.
 
 ### `GET /v1/delivery-endpoints`
 

@@ -146,6 +146,8 @@ export const CreateInterestSchema = z
 
 export const UpdateUserInterestSchema = z
   .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    description: z.string().trim().min(1).max(2_000).nullable().optional(),
     importance: z.number().int().min(1).max(5).optional(),
     expertiseLevel: ExpertiseLevelSchema.optional(),
     desiredDepth: DesiredDepthSchema.optional(),
@@ -187,6 +189,10 @@ export const ListInterestsQuerySchema = z
   .object({
     limit: z.coerce.number().int().min(1).max(100).default(20),
     cursor: z.uuid().optional(),
+    active: z
+      .enum(["true", "false"])
+      .transform((value) => value === "true")
+      .optional(),
   })
   .strict();
 
@@ -227,6 +233,7 @@ export type User = z.infer<typeof UserSchema>;
 export type UserPreferencesInput = z.infer<typeof UserPreferencesInputSchema>;
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
 export type UserProfile = z.infer<typeof UserProfileSchema>;
+export type InterestType = z.infer<typeof InterestTypeSchema>;
 export type CreateInterest = z.infer<typeof CreateInterestSchema>;
 export type UpdateUserInterest = z.infer<typeof UpdateUserInterestSchema>;
 export type UserInterest = z.infer<typeof UserInterestSchema>;

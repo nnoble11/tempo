@@ -1,7 +1,7 @@
 # Web Companion
 
-Status: Authenticated onboarding and canonical reading path  
-Last updated: 2026-07-18
+Status: Closed-beta companion management and canonical reading path Last
+updated: 2026-07-25
 
 ## Purpose
 
@@ -15,11 +15,22 @@ Implemented routes:
 - `/sign-in`: Supabase email/password sign-in and account creation;
 - `/onboarding`: time budget, daily schedule, initial interests, and depth;
 - `/`: protected Today briefing;
-- `/briefings/[briefingId]`: protected canonical briefing detail.
+- `/briefings/[briefingId]`: protected canonical briefing detail;
+- `/interests`: add, edit, mute, reactivate, and delete interests;
+- `/saved`: durable Saved collection;
+- `/later`: durable deferred-item collection;
+- `/history`: canonical briefing archive;
+- `/calendar`: view suggestions and delete synchronized free/busy state.
 
 Every factual item displays the stored takeaway, why-it-matters text, what
 changed, reading estimate, and claim-level source links. The end of the briefing
-is explicit.
+is explicit. Save and Later actions update the same API state as iOS and emit
+behavioral signals when enabled.
+
+Device calendar permission and synchronization remain iOS-only. Web receives
+only derived time-only availability through the authenticated API. It never
+receives event details or provider credentials and can disconnect and delete the
+synchronized state.
 
 ## Authentication and API boundary
 

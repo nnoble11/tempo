@@ -1418,6 +1418,18 @@ Track these without blocking initial development:
 
 ## 29. Immediate Build Order
 
+Closed-beta execution status as of 2026-07-25:
+
+- Steps 1 through 15 are implemented for iOS and web.
+- The five highest-impact beta slices now include post-onboarding interest
+  management; physical-device push registration and scheduled delivery;
+  durable Saved and Later collections; briefing history; and optional
+  free/busy-only calendar suggestions.
+- Physical-device APNs/Expo delivery and Calendar permission remain acceptance
+  gates, not substitutes for the automated repository coverage.
+- Entitlements, richer explanation/source controls, important-event alerts,
+  provider-complete email/SMS acceptance, and search remain subsequent work.
+
 1. Establish monorepo, formatting, linting, testing, and CI.
 2. Define domain contracts and database schema.
 3. Implement authentication and user preferences.

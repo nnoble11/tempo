@@ -3,36 +3,32 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
 import { upsertDeliveryEndpoint } from "./api";
+import {
+  registerPushEndpointWith,
+  type PushRegistrationResult,
+} from "./push-registration-core";
 
-export type PushRegistrationResult =
-  "registered" | "unsupported" | "not_configured" | "permission_denied";
+export type { PushRegistrationResult } from "./push-registration-core";
 
-export const registerPushEndpoint =
-  async (): Promise<PushRegistrationResult> => {
-    if (Platform.OS === "web" || !Device.isDevice) {
-      return "unsupported";
-    }
-    const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
-    if (projectId === undefined || projectId.length === 0) {
-      return "not_configured";
-    }
-
-    const currentPermissions = await Notifications.getPermissionsAsync();
-    const permissions =
-      currentPermissions.status === Notifications.PermissionStatus.GRANTED
-        ? currentPermissions
-        : await Notifications.requestPermissionsAsync();
-    if (permissions.status !== Notifications.PermissionStatus.GRANTED) {
-      return "permission_denied";
-    }
-
-    const { data: destination } = await Notifications.getExpoPushTokenAsync({
-      projectId,
-    });
-    await upsertDeliveryEndpoint({
-      channel: "push",
-      destination,
-      enabled: true,
-    });
-    return "registered";
-  };
+export const registerPushEndpoint = (): Promise<PushRegistrationResult> =>
+  registerPushEndpointWith({
+    supported: Platform.OS !== "web" && Device.isDevice,
+    projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
+    getPermissionStatus: async () =>
+      (await Notifications.getPermissionsAsync()).status,
+    requestPermission: async () =>
+      (await Notifications.requestPermissionsAsync()).status,
+    getToken: async (projectId) =>
+      (
+        await Notifications.getExpoPushTokenAsync({
+          projectId,
+        })
+      ).data,
+    upsert: async (destination) => {
+      await upsertDeliveryEndpoint({
+        channel: "push",
+        destination,
+        enabled: true,
+      });
+    },
+  });

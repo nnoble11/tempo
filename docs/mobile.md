@@ -1,7 +1,7 @@
 # Mobile Today Experience
 
-Status: Authenticated onboarding, delivery control, and consumption path  
-Last updated: 2026-07-25
+Status: Closed-beta iOS habit, management, and context path Last updated:
+2026-07-25
 
 ## Purpose
 
@@ -16,12 +16,18 @@ The Today screen supports:
 - an overview and ordered briefing items;
 - item expansion for “why it matters” and “what changed”;
 - claim-level source links with duplicate citations collapsed for display;
-- useful, less useful, save, expand, open, and source-click interactions;
+- useful, less useful, save/unsave, Later/remove, expand, open, and source-click
+  interactions;
 - a clear end state instead of infinite scrolling;
 - light and dark color schemes.
 - notification opens routed directly to the owned canonical briefing detail;
-- a delivery-settings route for quiet hours, email/SMS addition, verification,
-  and endpoint disablement.
+- navigation to post-onboarding Interests, Saved, Later, History, Calendar, and
+  delivery settings;
+- dedicated durable Saved and Later collections shared with web;
+- canonical briefing history and archive reading;
+- optional time-only calendar availability and “You have x minutes” suggestions;
+- delivery settings for daily local time, IANA timezone, push opt-in/out, quiet
+  hours, email/SMS addition, verification, and endpoint disablement.
 
 Before Today, Expo Router protects the application routes and presents:
 
@@ -59,6 +65,11 @@ onboarding, the app registers only when the user selected push:
 2. obtain the EAS project-scoped Expo push token;
 3. upsert the token through the authenticated delivery-endpoint API.
 
+When push remains enabled, the app refreshes the project-scoped token on launch
+and at most once every six hours when returning to the foreground. The endpoint
+upsert handles token rotation without creating duplicate active destinations.
+The Settings screen provides an explicit enable/disable control.
+
 Simulators, web, missing project configuration, and denied permission exit
 without registering an endpoint. Push registration is best-effort and does not
 block access to the canonical in-app briefing.
@@ -70,6 +81,42 @@ reads only the validated briefing UUID and navigates to
 The delivery runner reconciles Expo receipts separately. A `DeviceNotRegistered`
 receipt disables the exact endpoint so future briefings do not keep targeting an
 invalid token.
+
+Daily generation uses the saved IANA timezone and wall-clock time, including
+daylight-saving transitions. Push delivery uses the same canonical delivery
+record and respects local quiet hours. Real notification permission, APNs/Expo
+delivery, token rotation, and notification opens still require acceptance
+testing on a physical iPhone build.
+
+## Post-onboarding management
+
+The Interests route lists topics, entities, and natural-language rules after
+onboarding. Users can:
+
+- add any of the three interest types;
+- edit name, description, importance, and desired depth;
+- mute and reactivate;
+- delete from future selection while retaining historical briefing evidence.
+
+Today reads durable state from the API. Save and Later are independent, so an
+item may appear in both. Removing a state does not delete the canonical
+briefing. Enabling either state also emits the append-only behavioral signal
+used by personalization.
+
+History lists retained canonical briefings and opens the same owned detail route
+used by notification deep links.
+
+## Calendar availability
+
+Calendar permission is optional and requested only after the user chooses
+Connect. The iOS app reads a 48-hour device range, removes all-day and
+explicitly free events, and uploads only clipped busy start/end timestamps plus
+the range and IANA timezone.
+
+Event identifiers, titles, descriptions, notes, locations, attendees, and
+calendar names stay on the device. Tempo never modifies the calendar.
+Disconnecting deletes synchronized windows and disables suggestions. Web can
+display or delete the time-only state but cannot request device permission.
 
 ## Test distribution
 

@@ -4,6 +4,14 @@ export type {
 } from "./account-repository.js";
 export { PostgresAccountRepository } from "./account-repository.js";
 export {
+  PostgresCalendarRepository,
+  type CalendarRepository,
+} from "./calendar-repository.js";
+export {
+  findCalendarSuggestion,
+  mergeBusyWindows,
+} from "./calendar-availability.js";
+export {
   IdempotencyConflictError,
   PostgresBriefingRepository,
   type BriefingRepository,
@@ -32,6 +40,12 @@ export {
   type ClaimedIntelligenceJob,
   type IntelligenceJobRepository,
 } from "./intelligence-job-repository.js";
+export {
+  PostgresLibraryRepository,
+  type LibraryKind,
+  type LibraryRepository,
+  type UpdateItemStateResult,
+} from "./library-repository.js";
 export {
   migrationsDirectory,
   runMigrations,

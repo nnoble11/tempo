@@ -1,7 +1,7 @@
 # Source Integrations
 
-Status: Source, identity, verification, and delivery adapters  
-Last updated: 2026-07-18
+Status: Source, identity, delivery, and device-context adapters Last updated:
+2026-07-25
 
 ## Initial source set
 
@@ -161,3 +161,21 @@ not change.
 
 Operating instructions and sensitive-data constraints are in the
 [briefing delivery runbook](./runbooks/briefing-delivery.md).
+
+## Device calendar
+
+The closed-beta calendar adapter is the Expo Calendar API on iOS. Permission is
+requested in context after an authenticated user chooses Connect. The client
+reads the next 48 hours and transforms events into time-only busy intervals
+before crossing the network boundary.
+
+The adapter never sends calendar names, event identifiers, titles, descriptions,
+locations, attendees, or notes. The API accepts only an IANA timezone,
+synchronization range, and busy start/end pairs. It merges overlaps before
+storage and computes suggestions from those intervals.
+
+This is intentionally not a Google or Microsoft account integration. A future
+provider adapter must keep authorization tokens server-side, expose an explicit
+disconnect/delete path, and normalize its output into the same free/busy-only
+contract. Provider-specific private event content must not enter Tempo logs,
+prompts, analytics, or persistence.

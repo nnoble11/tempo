@@ -1,7 +1,7 @@
 import type { DeliveryEndpoint, UserPreferences } from "@tempo/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -25,6 +25,7 @@ import {
   requestDeliveryEndpointVerification,
   upsertDeliveryEndpoint,
 } from "../delivery/api";
+import { registerPushEndpoint } from "../delivery/push-registration";
 
 export function SettingsScreen() {
   const { session } = useAuth();
@@ -44,11 +45,25 @@ export function SettingsScreen() {
   const [quietEnd, setQuietEnd] = useState(
     preferences?.quietHoursEnd ?? "07:00",
   );
+  const [dailyTime, setDailyTime] = useState(
+    preferences?.dailyBriefingTime ?? "08:00",
+  );
+  const [timezone, setTimezone] = useState(
+    preferences?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
   const [destination, setDestination] = useState("");
   const [channel, setChannel] = useState<"email" | "sms">("email");
   const [codes, setCodes] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (preferences === undefined) return;
+    setQuietStart(preferences.quietHoursStart ?? "22:00");
+    setQuietEnd(preferences.quietHoursEnd ?? "07:00");
+    setDailyTime(preferences.dailyBriefingTime);
+    setTimezone(preferences.timezone);
+  }, [preferences?.updatedAt]);
 
   const refreshEndpoints = async (): Promise<void> => {
     await queryClient.invalidateQueries({ queryKey: ["delivery-endpoints"] });
@@ -72,6 +87,73 @@ export function SettingsScreen() {
       setMessage("Quiet hours saved.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveSchedule = async (): Promise<void> => {
+    if (preferences === undefined || session === null) return;
+    setBusy(true);
+    try {
+      const updated = await updatePreferences({
+        ...preferenceInput(preferences),
+        dailyBriefingTime: dailyTime,
+        timezone,
+      });
+      queryClient.setQueryData(profileQueryKey(session.user.id), {
+        ...profile.data,
+        preferences: updated,
+      });
+      setMessage("Daily delivery schedule saved.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Could not save schedule.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const togglePush = async (): Promise<void> => {
+    if (preferences === undefined || session === null) return;
+    const enabled = preferences.deliveryChannels.includes("push");
+    setBusy(true);
+    try {
+      if (!enabled) {
+        const registration = await registerPushEndpoint();
+        if (registration !== "registered") {
+          setMessage(
+            registration === "permission_denied"
+              ? "Push permission was denied. You can enable it in iOS Settings."
+              : "Push registration requires a configured physical iPhone build.",
+          );
+          return;
+        }
+      } else {
+        const pushEndpoints =
+          endpoints.data?.filter(({ channel }) => channel === "push") ?? [];
+        await Promise.all(
+          pushEndpoints.map(({ id }) => disableDeliveryEndpoint(id)),
+        );
+      }
+      const channels: UserPreferences["deliveryChannels"] = enabled
+        ? preferences.deliveryChannels.filter((value) => value !== "push")
+        : [...preferences.deliveryChannels, "push"];
+      const updated = await updatePreferences({
+        ...preferenceInput(preferences),
+        deliveryChannels: channels,
+      });
+      queryClient.setQueryData(profileQueryKey(session.user.id), {
+        ...profile.data,
+        preferences: updated,
+      });
+      await refreshEndpoints();
+      setMessage(enabled ? "Daily push disabled." : "Daily push enabled.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Could not update push.",
+      );
     } finally {
       setBusy(false);
     }
@@ -158,6 +240,68 @@ export function SettingsScreen() {
         </Pressable>
         <Text style={styles.eyebrow}>DELIVERY CONTROL</Text>
         <Text style={styles.title}>Your briefing, on your terms.</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Daily schedule</Text>
+          <Text style={styles.help}>
+            Tempo schedules once per local day using this IANA timezone, so the
+            wall-clock time survives daylight-saving changes.
+          </Text>
+          <TextInput
+            accessibilityLabel="Daily briefing time"
+            onChangeText={setDailyTime}
+            style={styles.fullInput}
+            value={dailyTime}
+          />
+          <TextInput
+            accessibilityLabel="Briefing timezone"
+            autoCapitalize="none"
+            onChangeText={setTimezone}
+            style={styles.fullInput}
+            value={timezone}
+          />
+          <Action
+            label="Use current timezone"
+            disabled={busy}
+            onPress={() =>
+              setTimezone(
+                Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+              )
+            }
+            styles={styles}
+          />
+          <Action
+            label="Save daily schedule"
+            disabled={busy}
+            onPress={saveSchedule}
+            styles={styles}
+          />
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Mobile push</Text>
+          <Text style={styles.help}>
+            Push is registered to this physical iPhone and opens the exact
+            canonical briefing. Invalid tokens are disabled automatically after
+            receipt reconciliation.
+          </Text>
+          <Action
+            label={
+              preferences.deliveryChannels.includes("push")
+                ? "Disable daily push"
+                : "Enable daily push"
+            }
+            disabled={busy}
+            onPress={togglePush}
+            styles={styles}
+          />
+          <Text style={styles.help}>
+            {endpoints.data?.filter(
+              ({ channel, enabled }) => channel === "push" && enabled,
+            ).length ?? 0}{" "}
+            active device endpoint
+          </Text>
+        </View>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Quiet hours</Text>

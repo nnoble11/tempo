@@ -1,16 +1,16 @@
 # Data Model
 
-Status: End-to-end briefing, intelligence-job, and delivery persistence  
-Last updated: 2026-07-18
+Status: Closed-beta account, briefing, library, calendar, and delivery
+persistence Last updated: 2026-07-25
 
 ## Current scope
 
 The current migrations store application identities, explicit briefing
 preferences, user-owned interests, registered sources, normalized source items,
 reusable story intelligence, canonical per-user briefing history, scheduled
-generation runs, delivery endpoints, and delivery attempts. Supabase Auth
-remains the identity provider; the application `users` table is keyed by the
-verified JWT subject.
+generation runs, durable Saved/Later state, time-only calendar availability,
+delivery endpoints, and delivery attempts. Supabase Auth remains the identity
+provider; the application `users` table is keyed by the verified JWT subject.
 
 ```text
 users
@@ -19,12 +19,14 @@ users
   ├──────── * scheduled_briefing_runs ─── 0..1 briefings
   ├──────── * delivery_endpoints
   ├──────── * deliveries * ────────────── 1 briefings
+  ├──────── 0..1 calendar_connections ─── * calendar_busy_windows
   │
   ├──────── * user_interests * ──────── 1 interests
   │                  │
   │                  └──────── * briefing_items * ──────── 1 briefings
   │                                      │                      │
-  │                                      └──── * interactions   └──── * generation_requests
+  │                                      ├──── * interactions   └──── * generation_requests
+  │                                      └──── 0..1 briefing_item_states
   │
   └────────────────────────────────────────────────────────  * briefings
 
@@ -101,12 +103,15 @@ interest reuse can be added later without changing the relationship model.
 - preferred and blocked sources
 - included and excluded keywords
 - `active`
+- `deleted_at`: nullable soft-deletion marker
 - `created_at`
 - `updated_at`
 - `last_interacted_at`
 
 All reads and mutations include `user_id` in their ownership predicate. An
 unauthorized update returns the same not-found response as a missing resource.
+Deletion deactivates and hides the relationship but retains it so historical
+briefing-item foreign keys and evidence remain valid.
 
 ### `sources`
 
@@ -264,6 +269,26 @@ Each interaction has structured value metadata, occurrence time, and a
 user-scoped idempotency key bound to a request hash. The item/user composite
 foreign key prevents cross-user feedback.
 
+### `briefing_item_states`
+
+One optional row stores the authenticated user's current intent for a canonical
+briefing item:
+
+- `user_id` and `briefing_item_id`;
+- nullable `saved_at`;
+- nullable `deferred_at`;
+- `created_at` and `updated_at`.
+
+At least one state timestamp must be present, and `(user_id, briefing_item_id)`
+is unique. A composite foreign key proves the item belongs to the same user.
+Removing both states deletes the row. This mutable current state is
+intentionally separate from append-only behavioral interactions; enabling Save
+or Later still records a personalization event.
+
+Saved and Later queries join back to the canonical item and briefing. They do
+not copy summaries or grounding, so later reads retain exactly the immutable
+ranking, claims, and citations originally shown.
+
 ### `scheduled_briefing_runs`
 
 One run exists per `(user_id, local_date)`. The due-run query converts the
@@ -299,6 +324,20 @@ Destinations are sensitive operational data and must not be included in
 structured logs. Push tokens and the exact authenticated identity email can be
 trusted immediately; all other email and SMS endpoints remain ineligible for
 delivery until verification succeeds.
+
+### `calendar_connections` and `calendar_busy_windows`
+
+The closed-beta calendar boundary stores one optional `device` connection per
+user with:
+
+- a non-sensitive display name and fixed `free_busy` scope;
+- active state, IANA timezone, synchronized range, and last-sync timestamp;
+- merged busy intervals containing only `starts_at` and `ends_at`.
+
+The schema deliberately has no event title, description, location, attendee,
+calendar-name, or event-identifier columns. Every busy window has a composite
+connection/user foreign key and a positive range. Disconnecting deletes all
+windows, clears synchronization metadata, and disables calendar suggestions.
 
 ### `deliveries`
 
@@ -348,8 +387,8 @@ until narrowly scoped policies are deliberately introduced and tested.
 
 ## Next schema milestone
 
-Calendar connections and availability windows are the next likely user-context
-tables. They should store the minimum provider identity and availability data,
-not private event descriptions. Story-intelligence evaluation artifacts may be
-added separately from production claims so prompt/model comparisons cannot
-rewrite canonical briefing evidence.
+Story-intelligence evaluation artifacts may be added separately from production
+claims so prompt/model comparisons cannot rewrite canonical briefing evidence.
+Provider-backed calendar tokens, if introduced, require a separate encrypted
+credential store and must continue producing the same time-only availability
+boundary.

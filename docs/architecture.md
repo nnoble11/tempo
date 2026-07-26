@@ -1,7 +1,6 @@
 # Tempo Architecture
 
-Status: End-to-end testable MVP foundation implemented  
-Last updated: 2026-07-18
+Status: Closed-beta core implemented for iOS and web Last updated: 2026-07-25
 
 ## Architectural goals
 
@@ -75,45 +74,53 @@ the mobile app or rendered for configured delivery channels:
     canonical briefing.
 12. Claim due deliveries with expiring leases and send through provider-neutral
     Expo Push, Resend, or Twilio adapters with bounded retry.
-13. Expose account, onboarding, interests, Today, briefing detail, feedback,
-    delivery endpoints, and delivery history through authenticated `/v1`
-    endpoints.
-14. Render protected sign-in, onboarding, destination management, push
-    registration, and a finite, expandable, citation-linked Today experience in
-    Expo.
+13. Expose account, onboarding, editable interests, Today, briefing detail and
+    history, Saved/Later state, feedback, free/busy availability, delivery
+    endpoints, and delivery history through authenticated `/v1` endpoints.
+14. Render protected sign-in, onboarding, post-onboarding interest management,
+    Saved, Later, history, optional calendar availability, destination
+    management, push registration, and a finite, expandable, citation-linked
+    Today experience in Expo.
 15. Deep-link notification opens to canonical mobile briefing detail, reconcile
     Expo receipts, and disable invalid device tokens.
-16. Render responsive authenticated web sign-in, onboarding, Today, and
-    canonical `/briefings/:id` routes from the same API contracts.
+16. Render responsive authenticated web sign-in, onboarding, Today, interest
+    management, Saved, Later, history, calendar controls, and canonical
+    `/briefings/:id` routes from the same API contracts.
 17. Bootstrap, smoke-check, and guarded-reset a deterministic test fixture
     through dedicated operational commands.
 
 PostgreSQL persistence now covers application users, onboarding state, explicit
 preferences, and user-owned interests; registered sources and normalized source
 items; reusable story clusters, claims, citations, and candidate updates;
-canonical briefings, briefing items, generation requests, and interactions;
-scheduled generation runs; delivery endpoints; and immutable delivery records.
+canonical briefings, briefing items, generation requests, interactions, and
+durable item state; scheduled generation runs; delivery endpoints; and immutable
+delivery records. Optional device-calendar connections retain only synchronized
+time ranges and merged free/busy windows.
 
 ## Intended application boundaries
 
 ### Mobile
 
 Expo with React Native owns the daily habit, push-notification entry points,
-briefing consumption, item expansion, feedback, and reading-position state.
+briefing consumption, item expansion, feedback, durable library state, interest
+management, history, and optional device-calendar synchronization.
 
 The initial client implements protected sign-in, account creation, onboarding,
-physical-device push registration, Today consumption, notification deep links,
-and verified destination/quiet-hour settings with Expo Router and TanStack
-Query. Supabase manages session refresh; native session material is stored
-through Expo SecureStore. API calls resolve the current access token from that
-session, never from a public development token.
+physical-device push registration and refresh, Today consumption, notification
+deep links, interest management, Saved/Later collections, briefing history,
+free/busy synchronization, and verified destination/schedule/quiet-hour settings
+with Expo Router and TanStack Query. Supabase manages session refresh; native
+session material is stored through Expo SecureStore. API calls resolve the
+current access token from that session, never from a public development token.
 
 ### Web
 
-Next.js currently owns responsive sign-in, onboarding, Today, and canonical
-briefing reading. It shares the Supabase bearer-token/API boundary with mobile
-while keeping browser sessions in browser storage. Interest/source management,
-billing, history, and search remain follow-on companion features.
+Next.js owns responsive sign-in, onboarding, Today, canonical briefing reading,
+interest management, Saved/Later collections, briefing history, and visibility
+and deletion of synchronized calendar availability. It shares the Supabase
+bearer-token/API boundary with mobile while keeping browser sessions in browser
+storage. Source management, billing, and search remain follow-on companion
+features.
 
 ### Product API
 
@@ -191,6 +198,7 @@ Personalized data:
 - selected briefing items and ordering;
 - personalized explanations;
 - interactions and delivery state.
+- current Saved/Later state and optional time-only availability windows.
 
 Commercial recommendations are a separate content class and cannot influence
 editorial story ranking.
@@ -203,6 +211,10 @@ editorial story ranking.
 - User-owned resources are authorized at every boundary.
 - Fetched content is untrusted input.
 - Private calendar descriptions are not logged or sent to models.
+- Calendar synchronization accepts only range metadata and busy start/end
+  timestamps; private event fields are rejected by the strict API contract.
+- Saved/Later state references immutable canonical items instead of copying
+  editorial content.
 - Prompt and model versions are stored with generated artifacts.
 - Every final factual claim maps to a supporting source.
 - Generated items snapshot the exact claims, citations, and ranking shown.
@@ -243,6 +255,7 @@ appropriate layer.
    scheduler, and web companion with managed secrets.
 2. Add browser/mobile end-to-end automation for sign-in, onboarding, Today,
    destination verification, and notification navigation.
-3. Add calendar availability through a provider-neutral read-only boundary.
+3. Validate physical-device push delivery and Calendar permission behavior in
+   the closed-beta EAS build.
 4. Replace deterministic story intelligence with evaluated semantic
    clustering/claim extraction while retaining direct citation checks.

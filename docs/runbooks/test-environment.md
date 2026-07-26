@@ -74,5 +74,5 @@ again.
   recurring schedules.
 - Logs and analytics exclude delivery destinations, verification codes, calendar
   details, and bearer tokens.
-- `pnpm check`, both Expo exports, `pnpm test:env:bootstrap`, and
+- `pnpm check`, the iOS Expo export, `pnpm test:env:bootstrap`, and
   `pnpm test:env:smoke` pass before inviting testers.

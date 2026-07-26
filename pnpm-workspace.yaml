@@ -24,3 +24,6 @@ minimumReleaseAgeExclude:
 onlyBuiltDependencies:
   - esbuild
   - sharp
+
+patchedDependencies:
+  expo-modules-jsi@57.0.4: patches/expo-modules-jsi@57.0.4.patch
