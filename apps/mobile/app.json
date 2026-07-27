@@ -8,7 +8,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.tempo.mobile",
+      "bundleIdentifier": "com.nathannoble.tempo",
       "config": {
         "usesNonExemptEncryption": false
       }
