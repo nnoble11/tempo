@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppNavigation } from "../../components/AppNavigation";
 import { darkPalette, lightPalette, type TempoPalette } from "../../theme";
 import { useLibraryItems, useUpdateBriefingItemState } from "./hooks";
+import { uniqueLibraryItems } from "./state-cache";
 
 export function LibraryScreen({ kind }: { kind: "saved" | "later" }) {
   const palette = useColorScheme() === "dark" ? darkPalette : lightPalette;
@@ -23,7 +24,9 @@ export function LibraryScreen({ kind }: { kind: "saved" | "later" }) {
   const update = useUpdateBriefingItemState();
   const [message, setMessage] = useState<string | null>(null);
   const title = kind === "saved" ? "Saved" : "Later";
-  const items = query.data?.pages.flatMap((page) => page.items) ?? [];
+  const items = uniqueLibraryItems(
+    query.data?.pages.flatMap((page) => page.items) ?? [],
+  );
   const removingItemId = update.isPending
     ? update.variables.briefingItemId
     : undefined;

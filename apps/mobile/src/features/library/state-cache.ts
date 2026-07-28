@@ -1,9 +1,21 @@
 import type {
   BriefingItemState,
+  LibraryItem,
   LibraryItemPage,
   UpdateBriefingItemState,
 } from "@tempo/contracts";
 import type { InfiniteData } from "@tanstack/react-query";
+
+export const uniqueLibraryItems = (
+  items: readonly LibraryItem[],
+): LibraryItem[] => {
+  const seen = new Set<string>();
+  return items.filter(({ item }) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+};
 
 export const applyOptimisticItemState = (
   current: BriefingItemState[] | undefined,

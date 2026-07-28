@@ -6,6 +6,7 @@ import {
   applyOptimisticItemState,
   reconcileItemState,
   removeCachedLibraryItem,
+  uniqueLibraryItems,
 } from "../src/features/library/state-cache";
 
 const itemId = "00000000-0000-4000-8000-000000000101";
@@ -92,6 +93,22 @@ describe("library item state cache", () => {
       expect.objectContaining({
         item: expect.objectContaining({ id: otherItemId }),
       }),
+    ]);
+  });
+
+  it("renders each item once when cached pages overlap", () => {
+    const duplicate = {
+      state: { id: "00000000-0000-4000-8000-000000000104" },
+      item: { id: itemId },
+    } as unknown as LibraryItemPage["items"][number];
+    const other = {
+      state: { id: "00000000-0000-4000-8000-000000000105" },
+      item: { id: "00000000-0000-4000-8000-000000000106" },
+    } as unknown as LibraryItemPage["items"][number];
+
+    expect(uniqueLibraryItems([duplicate, duplicate, other])).toEqual([
+      duplicate,
+      other,
     ]);
   });
 });
