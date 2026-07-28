@@ -58,8 +58,11 @@ export function SignInScreen() {
   if (confirmationSent) {
     return (
       <SafeAreaView style={styles.stateScreen}>
+        <Text style={styles.wordmark}>tempo</Text>
         <Text style={styles.eyebrow}>ONE QUICK STEP</Text>
-        <Text style={styles.title}>Check your inbox.</Text>
+        <Text accessibilityRole="header" style={styles.stateTitle}>
+          Check your inbox.
+        </Text>
         <Text style={styles.copy}>
           Confirm {email.trim()} and then return here to sign in.
         </Text>
@@ -90,9 +93,11 @@ export function SignInScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <View>
+          <View style={styles.intro}>
             <Text style={styles.wordmark}>tempo</Text>
-            <Text style={styles.title}>The right amount of what matters.</Text>
+            <Text accessibilityRole="header" style={styles.title}>
+              The right amount of what matters.
+            </Text>
             <Text style={styles.copy}>
               A calm daily briefing that fits the time you actually have.
             </Text>
@@ -103,7 +108,7 @@ export function SignInScreen() {
               {(["sign_in", "sign_up"] as const).map((option) => (
                 <Pressable
                   key={option}
-                  accessibilityRole="button"
+                  accessibilityRole="tab"
                   accessibilityState={{ selected: mode === option }}
                   onPress={() => {
                     setMode(option);
@@ -128,18 +133,22 @@ export function SignInScreen() {
 
             <Text style={styles.label}>EMAIL</Text>
             <TextInput
+              accessibilityLabel="Email address"
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
               onChangeText={setEmail}
               placeholder="you@example.com"
               placeholderTextColor={palette.textMuted}
+              returnKeyType="next"
               style={styles.input}
+              textContentType="emailAddress"
               value={email}
             />
 
             <Text style={styles.label}>PASSWORD</Text>
             <TextInput
+              accessibilityLabel="Password"
               autoCapitalize="none"
               autoComplete={
                 mode === "sign_in" ? "current-password" : "new-password"
@@ -148,8 +157,10 @@ export function SignInScreen() {
               onSubmitEditing={() => void submit()}
               placeholder="At least 6 characters"
               placeholderTextColor={palette.textMuted}
+              returnKeyType="go"
               secureTextEntry
               style={styles.input}
+              textContentType={mode === "sign_in" ? "password" : "newPassword"}
               value={password}
             />
 
@@ -161,6 +172,7 @@ export function SignInScreen() {
 
             <Pressable
               accessibilityRole="button"
+              accessibilityState={{ disabled: isSubmitting }}
               disabled={isSubmitting}
               onPress={() => void submit()}
               style={({ pressed }) => [
@@ -196,17 +208,21 @@ const createStyles = (palette: TempoPalette) =>
       flex: 1,
     },
     content: {
+      alignItems: "center",
       flexGrow: 1,
-      justifyContent: "space-between",
-      padding: 24,
-      paddingBottom: 32,
+      justifyContent: "center",
+      paddingHorizontal: 24,
+      paddingVertical: 36,
+    },
+    intro: {
+      maxWidth: 480,
+      width: "100%",
     },
     wordmark: {
       color: palette.accent,
       fontSize: 38,
       fontWeight: "800",
       letterSpacing: -2,
-      marginTop: 24,
     },
     eyebrow: {
       color: palette.accent,
@@ -220,7 +236,16 @@ const createStyles = (palette: TempoPalette) =>
       fontWeight: "700",
       letterSpacing: -1.2,
       lineHeight: 39,
-      marginTop: 24,
+      marginTop: 18,
+    },
+    stateTitle: {
+      color: palette.text,
+      fontSize: 32,
+      fontWeight: "700",
+      letterSpacing: -1,
+      lineHeight: 38,
+      marginTop: 18,
+      textAlign: "center",
     },
     copy: {
       color: palette.textMuted,
@@ -233,8 +258,10 @@ const createStyles = (palette: TempoPalette) =>
       borderColor: palette.border,
       borderRadius: 22,
       borderWidth: 1,
-      marginTop: 36,
-      padding: 20,
+      marginTop: 28,
+      maxWidth: 480,
+      padding: 22,
+      width: "100%",
     },
     modeRow: {
       backgroundColor: palette.surfaceMuted,
@@ -275,6 +302,7 @@ const createStyles = (palette: TempoPalette) =>
       borderWidth: 1,
       color: palette.text,
       fontSize: 16,
+      minHeight: 50,
       paddingHorizontal: 14,
       paddingVertical: 13,
     },
@@ -295,7 +323,7 @@ const createStyles = (palette: TempoPalette) =>
       paddingVertical: 14,
     },
     primaryButtonText: {
-      color: "#FFFFFF",
+      color: palette.background,
       fontSize: 15,
       fontWeight: "800",
     },
@@ -306,8 +334,10 @@ const createStyles = (palette: TempoPalette) =>
       color: palette.textMuted,
       fontSize: 11,
       lineHeight: 17,
-      marginTop: 30,
+      marginTop: 24,
+      maxWidth: 420,
       textAlign: "center",
+      width: "100%",
     },
     stateScreen: {
       alignItems: "center",

@@ -82,7 +82,7 @@ export default function OnboardingPage() {
 
   if (loading || session === null) {
     return (
-      <main className="centerState">
+      <main className="centerState" id="main-content">
         <a className="wordmark" href="/">
           tempo
         </a>
@@ -93,7 +93,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="setupShell">
+    <main className="setupShell" id="main-content">
       <header>
         <a className="wordmark" href="/">
           tempo
@@ -112,8 +112,10 @@ export default function OnboardingPage() {
             {[2, 5, 10, 15].map((value) => (
               <button
                 className={minutes === value ? "choice selected" : "choice"}
+                aria-pressed={minutes === value}
                 key={value}
                 onClick={() => setMinutes(value)}
+                type="button"
               >
                 {value} min
               </button>
@@ -147,8 +149,10 @@ export default function OnboardingPage() {
             {(["brief", "standard", "deep"] as const).map((value) => (
               <button
                 className={depth === value ? "choice selected" : "choice"}
+                aria-pressed={depth === value}
                 key={value}
                 onClick={() => setDepth(value)}
+                type="button"
               >
                 {value}
               </button>
@@ -159,11 +163,16 @@ export default function OnboardingPage() {
           </p>
         </section>
       </div>
-      {message === null ? null : <p className="formMessage">{message}</p>}
+      {message === null ? null : (
+        <p aria-live="polite" className="formMessage" role="status">
+          {message}
+        </p>
+      )}
       <button
         className="primaryLarge"
         disabled={busy}
         onClick={() => void submit()}
+        type="button"
       >
         {busy ? "Saving…" : "Build my daily briefing"}
       </button>

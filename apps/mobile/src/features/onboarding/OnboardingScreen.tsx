@@ -107,9 +107,18 @@ export function OnboardingScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.eyebrow}>SET UP YOUR TEMPO</Text>
-            <Text style={styles.title}>A briefing shaped around you.</Text>
+            <Text accessibilityRole="header" style={styles.title}>
+              A briefing shaped around you.
+            </Text>
+            <Text style={styles.headerHelper}>
+              Three quick choices. You can change them later.
+            </Text>
           </View>
-          <Pressable accessibilityRole="button" onPress={() => void signOut()}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void signOut()}
+            style={styles.signOutButton}
+          >
             <Text style={styles.signOut}>Sign out</Text>
           </Pressable>
         </View>
@@ -161,10 +170,12 @@ export function OnboardingScreen() {
 
           <View style={styles.customRow}>
             <TextInput
+              accessibilityLabel="Custom interest"
               onChangeText={setCustomInterest}
               onSubmitEditing={addCustomInterest}
               placeholder="Add anything else you care about"
               placeholderTextColor={palette.textMuted}
+              returnKeyType="done"
               style={styles.customInput}
               value={customInterest}
             />
@@ -188,8 +199,12 @@ export function OnboardingScreen() {
                   current.filter((value) => value !== interest),
                 )
               }
+              style={styles.customItemButton}
             >
-              <Text style={styles.customItem}>{interest} ×</Text>
+              <Text style={styles.customItem}>{interest}</Text>
+              <Text accessibilityElementsHidden style={styles.customRemove}>
+                ×
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -247,6 +262,7 @@ export function OnboardingScreen() {
 
         <Pressable
           accessibilityRole="button"
+          accessibilityState={{ disabled: completion.isPending }}
           disabled={completion.isPending}
           onPress={submit}
           style={({ pressed }) => [
@@ -301,15 +317,18 @@ const createStyles = (palette: TempoPalette) =>
       flex: 1,
     },
     content: {
-      padding: 22,
+      alignItems: "center",
+      paddingHorizontal: 22,
+      paddingTop: 18,
       paddingBottom: 48,
     },
     header: {
       alignItems: "flex-start",
       flexDirection: "row",
       justifyContent: "space-between",
+      maxWidth: 680,
       marginBottom: 24,
-      marginTop: 10,
+      width: "100%",
     },
     eyebrow: {
       color: palette.accent,
@@ -326,18 +345,32 @@ const createStyles = (palette: TempoPalette) =>
       marginTop: 10,
       maxWidth: 290,
     },
+    headerHelper: {
+      color: palette.textMuted,
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: 10,
+      maxWidth: 290,
+    },
+    signOutButton: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 44,
+      minWidth: 64,
+    },
     signOut: {
       color: palette.textMuted,
       fontSize: 12,
-      padding: 5,
     },
     section: {
       backgroundColor: palette.surface,
       borderColor: palette.border,
       borderRadius: 20,
       borderWidth: 1,
+      maxWidth: 680,
       marginBottom: 16,
       padding: 20,
+      width: "100%",
     },
     sectionNumber: {
       color: palette.accent,
@@ -368,6 +401,7 @@ const createStyles = (palette: TempoPalette) =>
       borderColor: palette.border,
       borderRadius: 12,
       borderWidth: 1,
+      minHeight: 44,
       paddingHorizontal: 13,
       paddingVertical: 10,
     },
@@ -410,6 +444,7 @@ const createStyles = (palette: TempoPalette) =>
       color: palette.text,
       flex: 1,
       fontSize: 14,
+      minHeight: 48,
       paddingHorizontal: 13,
       paddingVertical: 11,
     },
@@ -418,16 +453,32 @@ const createStyles = (palette: TempoPalette) =>
       backgroundColor: palette.accent,
       borderRadius: 12,
       justifyContent: "center",
+      minHeight: 48,
       width: 46,
     },
     addButtonText: {
-      color: "#FFFFFF",
+      color: palette.background,
       fontSize: 22,
+    },
+    customItemButton: {
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: palette.accentSoft,
+      borderRadius: 999,
+      flexDirection: "row",
+      gap: 7,
+      marginTop: 10,
+      minHeight: 40,
+      paddingHorizontal: 13,
     },
     customItem: {
       color: palette.accent,
       fontSize: 13,
-      marginTop: 10,
+      fontWeight: "700",
+    },
+    customRemove: {
+      color: palette.accent,
+      fontSize: 17,
     },
     toggleRow: {
       alignItems: "center",
@@ -435,6 +486,7 @@ const createStyles = (palette: TempoPalette) =>
       borderBottomWidth: 1,
       flexDirection: "row",
       justifyContent: "space-between",
+      minHeight: 50,
       paddingVertical: 13,
     },
     toggleText: {
@@ -450,20 +502,24 @@ const createStyles = (palette: TempoPalette) =>
       color: palette.negative,
       fontSize: 13,
       lineHeight: 20,
+      maxWidth: 680,
       marginBottom: 14,
       textAlign: "center",
+      width: "100%",
     },
     primaryButton: {
       alignItems: "center",
       backgroundColor: palette.accent,
       borderRadius: 16,
       justifyContent: "center",
+      maxWidth: 680,
       minHeight: 54,
       paddingHorizontal: 18,
       paddingVertical: 15,
+      width: "100%",
     },
     primaryButtonText: {
-      color: "#FFFFFF",
+      color: palette.background,
       fontSize: 15,
       fontWeight: "800",
     },

@@ -13,6 +13,8 @@ export function LibraryCollection({ kind }: { kind: "saved" | "later" }) {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const title = kind === "saved" ? "Saved" : "Later";
   const load = useCallback(async () => {
     setLoading(true);
@@ -21,14 +23,57 @@ export function LibraryCollection({ kind }: { kind: "saved" | "later" }) {
       const page = await fetchLibraryItems(kind);
       setItems(page.items);
       setNextCursor(page.nextCursor);
+    } catch {
+      setError("This collection could not be loaded.");
     } finally {
       setLoading(false);
     }
   }, [kind]);
 
+  const removeItem = async (briefingItemId: string): Promise<void> => {
+    const previousItems = items;
+    setError(null);
+    setRemovingItemId(briefingItemId);
+    setItems((current) =>
+      current.filter(({ item }) => item.id !== briefingItemId),
+    );
+    try {
+      await updateBriefingItemState(
+        briefingItemId,
+        kind === "saved" ? { saved: false } : { deferred: false },
+      );
+    } catch {
+      setItems(previousItems);
+      setError(`This item could not be removed from ${title}. Try again.`);
+    } finally {
+      setRemovingItemId(null);
+    }
+  };
+
+  const loadMore = async (): Promise<void> => {
+    if (nextCursor === null || loadingMore) return;
+    setError(null);
+    setLoadingMore(true);
+    try {
+      const page = await fetchLibraryItems(kind, nextCursor);
+      setItems((current) => [
+        ...current,
+        ...page.items.filter(
+          ({ item }) =>
+            !current.some((currentItem) => currentItem.item.id === item.id),
+        ),
+      ]);
+      setNextCursor(page.nextCursor);
+    } catch {
+      setError("More items could not be loaded.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   useEffect(() => {
     if (protection.ready) {
-      void load().catch(() => setError("This collection could not be loaded."));
+      void load();
     }
   }, [load, protection.ready]);
 
@@ -51,7 +96,14 @@ export function LibraryCollection({ kind }: { kind: "saved" | "later" }) {
       }
       copy="Your library is durable and shared with the iOS app."
     >
-      {error === null ? null : <p className="formMessage">{error}</p>}
+      {error === null ? null : (
+        <div aria-live="polite" className="formMessage">
+          <p>{error}</p>
+          {items.length === 0 ? (
+            <button onClick={() => void load()}>Retry</button>
+          ) : null}
+        </div>
+      )}
       {loading && items.length === 0 ? (
         <section className="featureCard emptyCard">
           <p>Loading {title}…</p>
@@ -71,31 +123,19 @@ export function LibraryCollection({ kind }: { kind: "saved" | "later" }) {
                 Open briefing
               </a>
               <button
-                onClick={() =>
-                  void updateBriefingItemState(
-                    item.id,
-                    kind === "saved" ? { saved: false } : { deferred: false },
-                  ).then(load)
-                }
+                aria-label={`Remove ${item.headline} from ${title}`}
+                disabled={removingItemId !== null}
+                onClick={() => void removeItem(item.id)}
               >
-                Remove
+                {removingItemId === item.id ? "Removing…" : "Remove"}
               </button>
             </div>
           </article>
         ))}
       </div>
       {nextCursor === null ? null : (
-        <button
-          onClick={() =>
-            void fetchLibraryItems(kind, nextCursor)
-              .then((page) => {
-                setItems((current) => [...current, ...page.items]);
-                setNextCursor(page.nextCursor);
-              })
-              .catch(() => setError("More items could not be loaded."))
-          }
-        >
-          Load more
+        <button disabled={loadingMore} onClick={() => void loadMore()}>
+          {loadingMore ? "Loading…" : "Load more"}
         </button>
       )}
       {!loading && items.length === 0 && error === null ? (

@@ -2,6 +2,7 @@
 
 import type { CanonicalBriefing } from "@tempo/contracts";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 import { fetchBriefing, fetchProfile, fetchToday } from "./api";
@@ -13,6 +14,7 @@ export function BriefingLoader({ briefingId }: { briefingId?: string }) {
   const { session, loading } = useSession();
   const [briefing, setBriefing] = useState<CanonicalBriefing | null>();
   const [error, setError] = useState<string | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
     if (loading) return;
@@ -22,6 +24,8 @@ export function BriefingLoader({ briefingId }: { briefingId?: string }) {
       );
       return;
     }
+    setBriefing(undefined);
+    setError(null);
     void fetchProfile()
       .then((profile) => {
         if (profile.user.onboardingCompletedAt === null) {
@@ -42,16 +46,34 @@ export function BriefingLoader({ briefingId }: { briefingId?: string }) {
             : "Tempo could not load this briefing.",
         ),
       );
-  }, [briefingId, loading, router, session]);
+  }, [briefingId, loading, retryToken, router, session]);
 
   if (error !== null) {
-    return <State title="Your briefing is out of reach" copy={error} />;
+    return (
+      <State
+        title="Your briefing is out of reach"
+        copy={error}
+        action={
+          <button
+            className="primaryAction"
+            onClick={() => setRetryToken((current) => current + 1)}
+          >
+            Try again
+          </button>
+        }
+      />
+    );
   }
   if (briefing === null) {
     return (
       <State
         title="You’re all caught up"
         copy="There are no meaningful updates waiting. Close the tab and keep your attention."
+        action={
+          <a className="secondaryLink" href="/interests">
+            Review interests
+          </a>
+        }
       />
     );
   }
@@ -60,20 +82,38 @@ export function BriefingLoader({ briefingId }: { briefingId?: string }) {
       <State
         title="Preparing your briefing"
         copy="Gathering the few updates that matter."
+        loading
       />
     );
   }
   return <BriefingView briefing={briefing} />;
 }
 
-function State({ title, copy }: { title: string; copy: string }) {
+function State({
+  title,
+  copy,
+  loading = false,
+  action,
+}: {
+  title: string;
+  copy: string;
+  loading?: boolean;
+  action?: ReactNode;
+}) {
   return (
-    <main className="centerState">
+    <main
+      aria-busy={loading}
+      aria-live="polite"
+      className="centerState"
+      id="main-content"
+    >
       <a className="wordmark" href="/">
         tempo
       </a>
+      {loading ? <span aria-hidden className="loadingMark" /> : null}
       <h1>{title}</h1>
       <p>{copy}</p>
+      {action}
     </main>
   );
 }

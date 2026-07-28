@@ -16,16 +16,16 @@ export function FeatureShell({
   children: ReactNode;
 }) {
   return (
-    <main className="shell featureShell">
+    <main className="shell featureShell" id="main-content">
       <header className="topbar">
         <a className="wordmark" href="/">
           tempo
         </a>
         <AppNavigation />
       </header>
-      <section className="featureHero">
+      <section aria-labelledby="feature-title" className="featureHero">
         <p className="eyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
+        <h1 id="feature-title">{title}</h1>
         <p className="muted">{copy}</p>
       </section>
       {children}

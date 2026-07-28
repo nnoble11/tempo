@@ -1,7 +1,7 @@
 "use client";
 
 import type { BriefingSummary } from "@tempo/contracts";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { fetchBriefingHistory } from "./api";
 import { FeatureShell } from "./FeatureShell";
@@ -13,22 +13,31 @@ export function BriefingHistory() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const loadInitial = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const page = await fetchBriefingHistory();
+      setItems(page.items);
+      setNextCursor(page.nextCursor);
+    } catch {
+      setError("History could not be loaded.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (protection.ready) {
-      void fetchBriefingHistory()
-        .then((page) => {
-          setItems(page.items);
-          setNextCursor(page.nextCursor);
-        })
-        .catch(() => setError("History could not be loaded."))
-        .finally(() => setLoading(false));
+      void loadInitial();
     }
-  }, [protection.ready]);
+  }, [loadInitial, protection.ready]);
 
   if (!protection.ready) {
     return (
-      <main className="centerState">
+      <main className="centerState" id="main-content">
         <h1>Preparing your history</h1>
         <p>{protection.error ?? "Checking your secure session."}</p>
       </main>
@@ -41,9 +50,25 @@ export function BriefingHistory() {
       title="A finite record of what mattered."
       copy="Revisit any canonical briefing without creating another endless feed."
     >
-      {error === null ? null : <p className="formMessage">{error}</p>}
+      {error === null ? null : (
+        <section className="featureCard emptyCard" role="alert">
+          <h2>History is out of reach</h2>
+          <p className="muted">{error}</p>
+          <button
+            className="primaryAction"
+            onClick={() => void loadInitial()}
+            type="button"
+          >
+            Try again
+          </button>
+        </section>
+      )}
       {loading ? (
-        <section className="featureCard emptyCard">
+        <section
+          aria-busy="true"
+          aria-live="polite"
+          className="featureCard emptyCard"
+        >
           <p>Loading briefing history…</p>
         </section>
       ) : null}
@@ -55,8 +80,10 @@ export function BriefingHistory() {
             key={briefing.id}
           >
             <p className="eyebrow">
-              {new Date(briefing.scheduledFor).toLocaleDateString()} ·{" "}
-              {Math.ceil(briefing.estimatedSeconds / 60)} MIN ·{" "}
+              <time dateTime={briefing.scheduledFor}>
+                {new Date(briefing.scheduledFor).toLocaleDateString()}
+              </time>{" "}
+              · {Math.ceil(briefing.estimatedSeconds / 60)} MIN ·{" "}
               {briefing.itemCount} UPDATES
             </p>
             <h2>{briefing.overview}</h2>
@@ -71,16 +98,26 @@ export function BriefingHistory() {
       ) : null}
       {nextCursor === null ? null : (
         <button
+          className="secondaryAction loadMore"
+          disabled={loadingMore}
           onClick={() =>
-            void fetchBriefingHistory(nextCursor)
-              .then((page) => {
+            void (async () => {
+              setLoadingMore(true);
+              setError(null);
+              try {
+                const page = await fetchBriefingHistory(nextCursor);
                 setItems((current) => [...current, ...page.items]);
                 setNextCursor(page.nextCursor);
-              })
-              .catch(() => setError("Older history could not be loaded."))
+              } catch {
+                setError("Older history could not be loaded.");
+              } finally {
+                setLoadingMore(false);
+              }
+            })()
           }
+          type="button"
         >
-          Load older briefings
+          {loadingMore ? "Loading…" : "Load older briefings"}
         </button>
       )}
     </FeatureShell>

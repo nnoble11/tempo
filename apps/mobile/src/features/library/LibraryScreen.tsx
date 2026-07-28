@@ -24,6 +24,9 @@ export function LibraryScreen({ kind }: { kind: "saved" | "later" }) {
   const [message, setMessage] = useState<string | null>(null);
   const title = kind === "saved" ? "Saved" : "Later";
   const items = query.data?.pages.flatMap((page) => page.items) ?? [];
+  const removingItemId = update.isPending
+    ? update.variables.briefingItemId
+    : undefined;
 
   if (query.isPending) {
     return (
@@ -51,7 +54,7 @@ export function LibraryScreen({ kind }: { kind: "saved" | "later" }) {
             styles={styles}
           />
         ) : null}
-        {items.length === 0 ? (
+        {!query.isError && items.length === 0 ? (
           <StateCard
             copy={
               kind === "saved"
@@ -84,6 +87,8 @@ export function LibraryScreen({ kind }: { kind: "saved" | "later" }) {
                 <Text style={styles.actionText}>Open briefing</Text>
               </Pressable>
               <Pressable
+                accessibilityLabel={`Remove ${item.headline} from ${title}`}
+                accessibilityRole="button"
                 disabled={update.isPending}
                 onPress={() =>
                   void update
@@ -99,7 +104,9 @@ export function LibraryScreen({ kind }: { kind: "saved" | "later" }) {
                 }
                 style={styles.secondary}
               >
-                <Text style={styles.secondaryText}>Remove</Text>
+                <Text style={styles.secondaryText}>
+                  {removingItemId === item.id ? "Removing…" : "Remove"}
+                </Text>
               </Pressable>
             </View>
           </View>

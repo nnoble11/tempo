@@ -80,21 +80,33 @@ export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
   };
 
   return (
-    <main className="shell">
+    <main className="shell" id="main-content">
       <header className="topbar">
         <a className="wordmark" href="/">
           tempo
         </a>
         <AppNavigation />
-        <div className="timePill">
+        <div
+          aria-label={`${Math.ceil(briefing.estimatedSeconds / 60)} minute briefing`}
+          className="timePill"
+        >
           {Math.ceil(briefing.estimatedSeconds / 60)} min
         </div>
       </header>
-      <section className="hero">
+      <section aria-labelledby="briefing-overview" className="hero">
         <p className="eyebrow">WHY TODAY MATTERS</p>
-        <h1>{briefing.overview}</h1>
+        <h1 id="briefing-overview">{briefing.overview}</h1>
         <p className="muted">
           {briefing.items.length} meaningful updates · one clear end
+        </p>
+        <p className="briefingDate">
+          <time dateTime={briefing.scheduledFor}>
+            {new Date(briefing.scheduledFor).toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+          </time>
         </p>
       </section>
       {calendar?.suggestion === null ||
@@ -111,7 +123,7 @@ export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
         </a>
       )}
       {message === null ? null : (
-        <p aria-live="polite" className="inlineNotice">
+        <p aria-live="polite" className="inlineNotice" role="status">
           {message}
         </p>
       )}
@@ -124,12 +136,16 @@ export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
           const deferred =
             state?.deferredAt !== null && state?.deferredAt !== undefined;
           return (
-            <article className="story" key={item.id}>
+            <article
+              aria-labelledby={`briefing-item-${item.id}`}
+              className="story"
+              key={item.id}
+            >
               <div className="storyMeta">
                 <span>{String(item.position).padStart(2, "0")}</span>
                 <span>{Math.ceil(item.estimatedSeconds / 60)} min</span>
               </div>
-              <h2>{item.headline}</h2>
+              <h2 id={`briefing-item-${item.id}`}>{item.headline}</h2>
               <p className="takeaway">{item.takeaway}</p>
               <div className="explanation">
                 <p className="eyebrow">WHY IT MATTERS TO YOU</p>
@@ -146,6 +162,7 @@ export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
               <div className="sources">
                 {uniqueSources(briefing, index).map((source) => (
                   <a
+                    aria-label={`Open ${source.publisher}: ${source.sourceTitle} in a new tab`}
                     href={source.canonicalUrl}
                     key={source.citationId}
                     rel="noreferrer"
@@ -161,16 +178,20 @@ export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
               </div>
               <div className="actionRow">
                 <button
+                  aria-pressed={saved}
                   className={saved ? "selectedAction" : ""}
                   onClick={() => void toggleState(item.id, "saved", saved)}
+                  type="button"
                 >
                   {saved ? "Saved ✓" : "Save"}
                 </button>
                 <button
+                  aria-pressed={deferred}
                   className={deferred ? "selectedAction" : ""}
                   onClick={() =>
                     void toggleState(item.id, "deferred", deferred)
                   }
+                  type="button"
                 >
                   {deferred ? "Later ✓" : "Later"}
                 </button>
@@ -180,7 +201,7 @@ export function BriefingView({ briefing }: { briefing: CanonicalBriefing }) {
         })}
       </div>
       <footer className="done">
-        <span />
+        <span aria-hidden />
         <h2>You’re informed.</h2>
         <p>That’s the end of this briefing.</p>
       </footer>

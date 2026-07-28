@@ -22,9 +22,20 @@ export function InterestManager() {
   const [name, setName] = useState("");
   const [type, setType] = useState<InterestType>("topic");
   const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
-    setItems((await fetchInterests()).items);
+    setLoading(true);
+    setLoadError(false);
+    try {
+      setItems((await fetchInterests()).items);
+    } catch (error) {
+      setLoadError(true);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -34,7 +45,7 @@ export function InterestManager() {
 
   if (!protection.ready) {
     return (
-      <main className="centerState">
+      <main className="centerState" id="main-content">
         <h1>Preparing your interests</h1>
         <p>{protection.error ?? "Checking your secure session."}</p>
       </main>
@@ -76,9 +87,11 @@ export function InterestManager() {
         <div className="choiceRow">
           {(["topic", "entity", "instruction"] as const).map((value) => (
             <button
+              aria-pressed={type === value}
               className={type === value ? "choice selected" : "choice"}
               key={value}
               onClick={() => setType(value)}
+              type="button"
             >
               {value === "instruction" ? "Natural-language rule" : value}
             </button>
@@ -95,10 +108,47 @@ export function InterestManager() {
           rows={type === "instruction" ? 3 : 1}
           value={name}
         />
-        <button className="primaryAction" onClick={() => void add()}>
+        <button
+          className="primaryAction"
+          disabled={name.trim().length === 0}
+          onClick={() => void add()}
+          type="button"
+        >
           Add interest
         </button>
       </section>
+      {loading ? (
+        <section
+          aria-busy="true"
+          aria-live="polite"
+          className="featureCard emptyCard"
+        >
+          <p>Loading your interests…</p>
+        </section>
+      ) : null}
+      {!loading && loadError ? (
+        <section className="featureCard emptyCard" role="alert">
+          <h2>Interests could not be loaded.</h2>
+          <p className="muted">Check your connection and try again.</p>
+          <button
+            className="primaryAction"
+            onClick={() =>
+              void load().catch(() => setMessage("Could not load."))
+            }
+            type="button"
+          >
+            Try again
+          </button>
+        </section>
+      ) : null}
+      {!loading && !loadError && items.length > 0 ? (
+        <div className="sectionHeader">
+          <h2>Your interests</h2>
+          <span>
+            {items.length} {items.length === 1 ? "interest" : "interests"}
+          </span>
+        </div>
+      ) : null}
       <div className="featureGrid">
         {items.map((interest) => (
           <InterestEditor
@@ -108,7 +158,19 @@ export function InterestManager() {
           />
         ))}
       </div>
-      {message === null ? null : <p className="formMessage">{message}</p>}
+      {!loading && !loadError && items.length === 0 ? (
+        <section className="featureCard emptyCard">
+          <h2>Start with one clear signal.</h2>
+          <p className="muted">
+            Add a topic, entity, or natural-language rule above.
+          </p>
+        </section>
+      ) : null}
+      {message === null ? null : (
+        <p aria-live="polite" className="inlineNotice" role="status">
+          {message}
+        </p>
+      )}
     </FeatureShell>
   );
 }
@@ -143,39 +205,71 @@ function InterestEditor({
 
   return (
     <article className={`featureCard ${interest.active ? "" : "mutedCard"}`}>
-      <p className="eyebrow">{interest.type.toUpperCase()}</p>
-      <input onChange={(event) => setName(event.target.value)} value={name} />
-      <textarea
-        onChange={(event) => setDescription(event.target.value)}
-        rows={3}
-        value={description}
-      />
-      <label>
-        Importance
-        <select
-          onChange={(event) => setImportance(Number(event.target.value))}
-          value={importance}
-        >
-          {[1, 2, 3, 4, 5].map((value) => (
-            <option key={value}>{value}</option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Depth
-        <select
-          onChange={(event) => setDepth(event.target.value as DesiredDepth)}
-          value={depth}
-        >
-          <option value="brief">Brief</option>
-          <option value="standard">Standard</option>
-          <option value="deep">Deep</option>
-        </select>
-      </label>
-      <div className="actionRow">
-        <button disabled={busy} onClick={() => void save()}>
-          Save edits
-        </button>
+      <div className="interestHeader">
+        <div>
+          <p className="eyebrow">{interest.type.toUpperCase()}</p>
+          <h2>{interest.name}</h2>
+        </div>
+        <span className={interest.active ? "statusBadge" : "statusBadge muted"}>
+          {interest.active ? "Active" : "Muted"}
+        </span>
+      </div>
+      {interest.description === null ? null : (
+        <p className="muted interestDescription">{interest.description}</p>
+      )}
+      <p className="interestMeta">
+        Importance {interest.importance}/5 · {interest.desiredDepth} depth
+      </p>
+      <details className="editorDisclosure">
+        <summary>Edit details</summary>
+        <div className="editorFields">
+          <label>
+            Name
+            <input
+              onChange={(event) => setName(event.target.value)}
+              value={name}
+            />
+          </label>
+          <label>
+            Guidance
+            <textarea
+              onChange={(event) => setDescription(event.target.value)}
+              rows={3}
+              value={description}
+            />
+          </label>
+          <div className="editorSelects">
+            <label>
+              Importance
+              <select
+                onChange={(event) => setImportance(Number(event.target.value))}
+                value={importance}
+              >
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <option key={value}>{value}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Depth
+              <select
+                onChange={(event) =>
+                  setDepth(event.target.value as DesiredDepth)
+                }
+                value={depth}
+              >
+                <option value="brief">Brief</option>
+                <option value="standard">Standard</option>
+                <option value="deep">Deep</option>
+              </select>
+            </label>
+          </div>
+          <button disabled={busy} onClick={() => void save()} type="button">
+            Save changes
+          </button>
+        </div>
+      </details>
+      <div className="actionRow interestActions">
         <button
           disabled={busy}
           onClick={() =>
@@ -183,6 +277,7 @@ function InterestEditor({
               onChanged,
             )
           }
+          type="button"
         >
           {interest.active ? "Mute" : "Reactivate"}
         </button>
@@ -194,6 +289,7 @@ function InterestEditor({
               void deleteInterest(interest.id).then(onChanged);
             }
           }}
+          type="button"
         >
           Delete
         </button>

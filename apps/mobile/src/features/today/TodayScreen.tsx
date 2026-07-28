@@ -104,10 +104,13 @@ function ItemCard({
         </Text>
       </View>
 
-      <Text style={styles.headline}>{item.headline}</Text>
+      <Text accessibilityRole="header" style={styles.headline}>
+        {item.headline}
+      </Text>
       <Text style={styles.takeaway}>{item.takeaway}</Text>
 
       <Pressable
+        accessibilityLabel={`${expanded ? "Hide" : "Show"} context for ${item.headline}`}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
         onPress={onToggle}
@@ -218,11 +221,14 @@ function ItemCard({
           accessibilityRole="button"
           onPress={onSave}
           style={({ pressed }) => [
-            styles.saveButton,
+            styles.actionButton,
+            saved && styles.actionButtonSelected,
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.saveText}>{saved ? "Saved" : "Save"}</Text>
+          <Text style={[styles.actionText, saved && styles.actionTextSelected]}>
+            {saved ? "Saved ✓" : "Save"}
+          </Text>
         </Pressable>
         <Pressable
           accessibilityLabel={
@@ -234,12 +240,16 @@ function ItemCard({
           accessibilityRole="button"
           onPress={onDefer}
           style={({ pressed }) => [
-            styles.saveButton,
+            styles.actionButton,
             deferred && styles.actionButtonSelected,
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.saveText}>{deferred ? "Later ✓" : "Later"}</Text>
+          <Text
+            style={[styles.actionText, deferred && styles.actionTextSelected]}
+          >
+            {deferred ? "Later ✓" : "Later"}
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -498,9 +508,6 @@ export function TodayScreen() {
             <Text style={styles.durationLabel}>BRIEFING</Text>
           </View>
         </View>
-        <View style={styles.progressTrack}>
-          <View style={styles.progressFill} />
-        </View>
 
         {calendar.data?.suggestion === null ||
         calendar.data?.suggestion === undefined ? null : (
@@ -522,7 +529,9 @@ export function TodayScreen() {
 
         <View style={styles.overviewCard}>
           <Text style={styles.eyebrow}>WHY TODAY MATTERS</Text>
-          <Text style={styles.overview}>{briefing.overview}</Text>
+          <Text accessibilityRole="header" style={styles.overview}>
+            {briefing.overview}
+          </Text>
           <Text style={styles.briefingCount}>
             {briefing.items.length}{" "}
             {briefing.items.length === 1 ? "update" : "updates"} · a clear end
@@ -602,15 +611,18 @@ const createStyles = (palette: TempoPalette) =>
       backgroundColor: palette.background,
     },
     scrollContent: {
+      alignSelf: "center",
+      maxWidth: 720,
       paddingHorizontal: 20,
       paddingBottom: 52,
+      width: "100%",
     },
     header: {
       alignItems: "flex-start",
       flexDirection: "row",
       justifyContent: "space-between",
-      paddingBottom: 22,
-      paddingTop: 14,
+      paddingBottom: 20,
+      paddingTop: 20,
     },
     wordmark: {
       color: palette.text,
@@ -644,27 +656,6 @@ const createStyles = (palette: TempoPalette) =>
       letterSpacing: 1.2,
       marginTop: 1,
     },
-    settingsButton: {
-      alignSelf: "flex-end",
-      marginBottom: 14,
-      paddingVertical: 4,
-    },
-    settingsText: {
-      color: palette.accent,
-      fontSize: 12,
-      fontWeight: "700",
-    },
-    progressTrack: {
-      backgroundColor: palette.border,
-      height: 2,
-      marginBottom: 22,
-      width: "100%",
-    },
-    progressFill: {
-      backgroundColor: palette.accent,
-      height: 2,
-      width: "100%",
-    },
     overviewCard: {
       backgroundColor: palette.surface,
       borderColor: palette.border,
@@ -697,7 +688,7 @@ const createStyles = (palette: TempoPalette) =>
       fontSize: 23,
       fontWeight: "600",
       letterSpacing: -0.5,
-      lineHeight: 31,
+      lineHeight: 30,
       marginTop: 12,
     },
     briefingCount: {
@@ -837,13 +828,19 @@ const createStyles = (palette: TempoPalette) =>
     },
     actionRow: {
       flexDirection: "row",
+      flexWrap: "wrap",
       gap: 8,
       marginTop: 18,
     },
     actionButton: {
+      alignItems: "center",
       borderColor: palette.border,
       borderRadius: 12,
       borderWidth: 1,
+      flexBasis: "46%",
+      flexGrow: 1,
+      justifyContent: "center",
+      minHeight: 44,
       paddingHorizontal: 11,
       paddingVertical: 9,
     },
@@ -853,21 +850,11 @@ const createStyles = (palette: TempoPalette) =>
     },
     actionText: {
       color: palette.textMuted,
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: "700",
     },
     actionTextSelected: {
       color: palette.accent,
-    },
-    saveButton: {
-      marginLeft: "auto",
-      paddingHorizontal: 8,
-      paddingVertical: 9,
-    },
-    saveText: {
-      color: palette.accent,
-      fontSize: 11,
-      fontWeight: "700",
     },
     pressed: {
       opacity: 0.62,
@@ -928,6 +915,7 @@ const createStyles = (palette: TempoPalette) =>
     primaryButton: {
       backgroundColor: palette.accent,
       borderRadius: 14,
+      minHeight: 48,
       marginTop: 24,
       paddingHorizontal: 20,
       paddingVertical: 12,

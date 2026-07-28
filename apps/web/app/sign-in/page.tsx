@@ -9,7 +9,7 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <main className="authShell">
+        <main className="authShell" id="main-content">
           <p className="eyebrow">OPENING TEMPO…</p>
         </main>
       }
@@ -50,7 +50,7 @@ function SignInForm() {
   };
 
   return (
-    <main className="authShell">
+    <main className="authShell" id="main-content">
       <section className="authIntro">
         <a className="wordmark" href="/">
           tempo
@@ -62,7 +62,13 @@ function SignInForm() {
           in sources, fitted to your available time, and finished when you are.
         </p>
       </section>
-      <section className="authCard">
+      <form
+        className="authCard"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submit();
+        }}
+      >
         <p className="eyebrow">
           {mode === "sign-in" ? "WELCOME BACK" : "START YOUR TEMPO"}
         </p>
@@ -90,10 +96,14 @@ function SignInForm() {
             value={password}
           />
         </label>
-        {message === null ? null : <p className="formMessage">{message}</p>}
+        {message === null ? null : (
+          <p aria-live="polite" className="formMessage" role="status">
+            {message}
+          </p>
+        )}
         <button
           disabled={busy || email.length === 0 || password.length < 6}
-          onClick={() => void submit()}
+          type="submit"
         >
           {busy
             ? "One moment…"
@@ -104,12 +114,13 @@ function SignInForm() {
         <button
           className="textButton"
           onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
+          type="button"
         >
           {mode === "sign-in"
             ? "Need an account? Create one"
             : "Already have an account? Sign in"}
         </button>
-      </section>
+      </form>
     </main>
   );
 }

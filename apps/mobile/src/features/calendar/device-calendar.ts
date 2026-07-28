@@ -2,18 +2,22 @@ import * as Calendar from "expo-calendar";
 
 import type { SyncCalendarAvailability } from "@tempo/contracts";
 
+import { buildDeviceCalendarAvailability } from "./calendar-windows";
+
 export type DeviceCalendarAvailabilityResult =
-  | { status: "denied" }
+  | { status: "denied"; canAskAgain: boolean }
   | { status: "granted"; availability: SyncCalendarAvailability };
 
 export const readDeviceCalendarAvailability =
   async (): Promise<DeviceCalendarAvailabilityResult> => {
-    const current = await Calendar.getCalendarPermissions();
+    const current = await Calendar.getCalendarPermissions(false);
     const permission = current.granted
       ? current
-      : await Calendar.requestCalendarPermissions();
+      : current.canAskAgain
+        ? await Calendar.requestCalendarPermissions(false)
+        : current;
     if (!permission.granted) {
-      return { status: "denied" };
+      return { status: "denied", canAskAgain: permission.canAskAgain };
     }
 
     const rangeStartsAt = new Date();
@@ -24,37 +28,15 @@ export const readDeviceCalendarAvailability =
       rangeStartsAt,
       rangeEndsAt,
     );
-    const busyWindows = events
-      .filter(
-        (event) =>
-          event.availability !== Calendar.Availability.FREE && !event.allDay,
-      )
-      .map((event) => ({
-        startsAt: new Date(event.startDate).toISOString(),
-        endsAt: new Date(event.endDate).toISOString(),
-      }))
-      .filter(
-        ({ startsAt, endsAt }) =>
-          new Date(startsAt) < new Date(endsAt) &&
-          new Date(endsAt) > rangeStartsAt &&
-          new Date(startsAt) < rangeEndsAt,
-      )
-      .map(({ startsAt, endsAt }) => ({
-        startsAt: new Date(
-          Math.max(new Date(startsAt).valueOf(), rangeStartsAt.valueOf()),
-        ).toISOString(),
-        endsAt: new Date(
-          Math.min(new Date(endsAt).valueOf(), rangeEndsAt.valueOf()),
-        ).toISOString(),
-      }));
 
     return {
       status: "granted",
-      availability: {
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-        rangeStartsAt: rangeStartsAt.toISOString(),
-        rangeEndsAt: rangeEndsAt.toISOString(),
-        busyWindows,
-      },
+      availability: buildDeviceCalendarAvailability({
+        events,
+        rangeStartsAt,
+        rangeEndsAt,
+        timezone:
+          Intl.DateTimeFormat().resolvedOptions().timeZone.trim() || "UTC",
+      }),
     };
   };

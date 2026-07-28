@@ -1,6 +1,5 @@
 import type { DeliveryEndpoint, UserPreferences } from "@tempo/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "../../auth/AuthProvider";
+import { AppNavigation } from "../../components/AppNavigation";
 import { darkPalette, lightPalette, type TempoPalette } from "../../theme";
 import { updatePreferences } from "./api";
 import { profileQueryKey, useProfile } from "./hooks";
@@ -29,7 +29,6 @@ import { registerPushEndpoint } from "../delivery/push-registration";
 
 export function SettingsScreen() {
   const { session } = useAuth();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const palette = useColorScheme() === "dark" ? darkPalette : lightPalette;
   const styles = useMemo(() => createStyles(palette), [palette]);
@@ -228,31 +227,43 @@ export function SettingsScreen() {
     return (
       <SafeAreaView style={styles.state}>
         <ActivityIndicator color={palette.accent} />
+        <Text style={styles.stateText}>Loading your delivery settings…</Text>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={styles.back}>← Today</Text>
-        </Pressable>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <AppNavigation palette={palette} />
         <Text style={styles.eyebrow}>DELIVERY CONTROL</Text>
-        <Text style={styles.title}>Your briefing, on your terms.</Text>
+        <Text accessibilityRole="header" style={styles.title}>
+          Your briefing, on your terms.
+        </Text>
+        <Text style={styles.intro}>
+          Choose when Tempo arrives and where it can reach you. Your in-app
+          briefing always remains the canonical version.
+        </Text>
 
         <View style={styles.card}>
+          <Text style={styles.sectionLabel}>TIMING</Text>
           <Text style={styles.cardTitle}>Daily schedule</Text>
           <Text style={styles.help}>
-            Tempo schedules once per local day using this IANA timezone, so the
-            wall-clock time survives daylight-saving changes.
+            Tempo schedules once per local day. Your timezone keeps the chosen
+            time stable through daylight-saving changes.
           </Text>
+          <Text style={styles.fieldLabel}>LOCAL TIME</Text>
           <TextInput
             accessibilityLabel="Daily briefing time"
             onChangeText={setDailyTime}
             style={styles.fullInput}
             value={dailyTime}
           />
+          <Text style={styles.fieldLabel}>TIMEZONE</Text>
           <TextInput
             accessibilityLabel="Briefing timezone"
             autoCapitalize="none"
@@ -269,6 +280,7 @@ export function SettingsScreen() {
               )
             }
             styles={styles}
+            variant="secondary"
           />
           <Action
             label="Save daily schedule"
@@ -279,6 +291,7 @@ export function SettingsScreen() {
         </View>
 
         <View style={styles.card}>
+          <Text style={styles.sectionLabel}>IPHONE</Text>
           <Text style={styles.cardTitle}>Mobile push</Text>
           <Text style={styles.help}>
             Push is registered to this physical iPhone and opens the exact
@@ -294,20 +307,32 @@ export function SettingsScreen() {
             disabled={busy}
             onPress={togglePush}
             styles={styles}
+            variant={
+              preferences.deliveryChannels.includes("push")
+                ? "secondary"
+                : "primary"
+            }
           />
-          <Text style={styles.help}>
+          <Text style={styles.statusText}>
             {endpoints.data?.filter(
               ({ channel, enabled }) => channel === "push" && enabled,
             ).length ?? 0}{" "}
-            active device endpoint
+            active{" "}
+            {endpoints.data?.filter(
+              ({ channel, enabled }) => channel === "push" && enabled,
+            ).length === 1
+              ? "device"
+              : "devices"}
           </Text>
         </View>
 
         <View style={styles.card}>
+          <Text style={styles.sectionLabel}>BOUNDARIES</Text>
           <Text style={styles.cardTitle}>Quiet hours</Text>
           <Text style={styles.help}>
             External messages wait until this local-time window ends.
           </Text>
+          <Text style={styles.fieldLabel}>LOCAL-TIME WINDOW</Text>
           <View style={styles.row}>
             <TextInput
               accessibilityLabel="Quiet hours start"
@@ -332,19 +357,35 @@ export function SettingsScreen() {
         </View>
 
         <View style={styles.card}>
+          <Text style={styles.sectionLabel}>OTHER CHANNELS</Text>
           <Text style={styles.cardTitle}>Verified destinations</Text>
+          <Text style={styles.help}>
+            Email and SMS stay off until the destination is verified.
+          </Text>
           <View style={styles.row}>
             {(["email", "sms"] as const).map((value) => (
               <Pressable
+                accessibilityRole="tab"
+                accessibilityState={{ selected: channel === value }}
                 key={value}
                 onPress={() => setChannel(value)}
                 style={[styles.chip, channel === value && styles.chipSelected]}
               >
-                <Text style={styles.chipText}>{value.toUpperCase()}</Text>
+                <Text
+                  style={[
+                    styles.chipText,
+                    channel === value && styles.chipTextSelected,
+                  ]}
+                >
+                  {value.toUpperCase()}
+                </Text>
               </Pressable>
             ))}
           </View>
           <TextInput
+            accessibilityLabel={
+              channel === "email" ? "Email destination" : "SMS destination"
+            }
             autoCapitalize="none"
             keyboardType={channel === "email" ? "email-address" : "phone-pad"}
             onChangeText={setDestination}
@@ -374,6 +415,7 @@ export function SettingsScreen() {
                 disabled={endpoints.isRefetching}
                 onPress={() => void endpoints.refetch()}
                 styles={styles}
+                variant="secondary"
               />
             </View>
           ) : null}
@@ -393,8 +435,10 @@ export function SettingsScreen() {
                     disabled={busy}
                     onPress={() => requestCode(endpoint)}
                     styles={styles}
+                    variant="secondary"
                   />
                   <TextInput
+                    accessibilityLabel={`Verification code for ${endpoint.destination}`}
                     keyboardType="number-pad"
                     maxLength={6}
                     onChangeText={(code) =>
@@ -421,12 +465,15 @@ export function SettingsScreen() {
                 disabled={busy}
                 onPress={() => disableDestination(endpoint)}
                 styles={styles}
+                variant="danger"
               />
             </View>
           ))}
         </View>
         {message === null ? null : (
-          <Text style={styles.message}>{message}</Text>
+          <View accessibilityRole="alert" style={styles.notice}>
+            <Text style={styles.message}>{message}</Text>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -450,19 +497,37 @@ function Action({
   disabled,
   onPress,
   styles,
+  variant = "primary",
 }: {
   label: string;
   disabled: boolean;
   onPress: () => void | Promise<void>;
   styles: ReturnType<typeof createStyles>;
+  variant?: "primary" | "secondary" | "danger";
 }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={() => void onPress()}
-      style={styles.action}
+      style={({ pressed }) => [
+        styles.action,
+        variant === "secondary" && styles.actionSecondary,
+        variant === "danger" && styles.actionDanger,
+        disabled && styles.disabled,
+        pressed && styles.pressed,
+      ]}
     >
-      <Text style={styles.actionText}>{label}</Text>
+      <Text
+        style={[
+          styles.actionText,
+          variant === "secondary" && styles.actionTextSecondary,
+          variant === "danger" && styles.actionTextDanger,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -471,71 +536,132 @@ const createStyles = (palette: TempoPalette) =>
   StyleSheet.create({
     safeArea: { backgroundColor: palette.background, flex: 1 },
     state: {
+      alignItems: "center",
       backgroundColor: palette.background,
       flex: 1,
+      gap: 12,
       justifyContent: "center",
     },
-    content: { gap: 20, padding: 24, paddingBottom: 60 },
-    back: { color: palette.accent, fontSize: 16, fontWeight: "700" },
+    stateText: { color: palette.textMuted, fontSize: 14 },
+    content: {
+      alignSelf: "center",
+      gap: 16,
+      maxWidth: 720,
+      padding: 22,
+      paddingBottom: 60,
+      width: "100%",
+    },
     eyebrow: {
       color: palette.accent,
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: "800",
-      letterSpacing: 1.5,
+      letterSpacing: 1.4,
+      marginTop: 6,
     },
     title: {
       color: palette.text,
-      fontSize: 32,
-      fontWeight: "800",
-      lineHeight: 39,
+      fontSize: 31,
+      fontWeight: "700",
+      letterSpacing: -0.7,
+      lineHeight: 38,
     },
+    intro: { color: palette.textMuted, fontSize: 14, lineHeight: 21 },
     card: {
       backgroundColor: palette.surface,
       borderColor: palette.border,
-      borderRadius: 20,
+      borderRadius: 18,
       borderWidth: 1,
-      gap: 14,
-      padding: 20,
+      gap: 13,
+      padding: 19,
     },
-    cardTitle: { color: palette.text, fontSize: 21, fontWeight: "800" },
-    help: { color: palette.textMuted, fontSize: 13, lineHeight: 18 },
-    row: { alignItems: "center", flexDirection: "row", gap: 10 },
+    sectionLabel: {
+      color: palette.accent,
+      fontSize: 9,
+      fontWeight: "800",
+      letterSpacing: 1.2,
+    },
+    cardTitle: { color: palette.text, fontSize: 20, fontWeight: "700" },
+    fieldLabel: {
+      color: palette.textMuted,
+      fontSize: 9,
+      fontWeight: "800",
+      letterSpacing: 1.1,
+      marginTop: 2,
+    },
+    help: { color: palette.textMuted, fontSize: 13, lineHeight: 19 },
+    statusText: {
+      color: palette.textMuted,
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    row: {
+      alignItems: "center",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+    },
     input: {
       backgroundColor: palette.background,
       borderColor: palette.border,
-      borderRadius: 10,
+      borderRadius: 12,
       borderWidth: 1,
       color: palette.text,
       fontSize: 16,
+      minHeight: 48,
       padding: 12,
-      width: 90,
+      width: 104,
     },
     fullInput: {
       backgroundColor: palette.background,
       borderColor: palette.border,
-      borderRadius: 10,
+      borderRadius: 12,
       borderWidth: 1,
       color: palette.text,
       fontSize: 16,
+      minHeight: 48,
       padding: 12,
     },
     chip: {
       borderColor: palette.border,
-      borderRadius: 999,
+      borderRadius: 12,
       borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 44,
       paddingHorizontal: 14,
       paddingVertical: 9,
     },
-    chipSelected: { backgroundColor: palette.accent },
+    chipSelected: {
+      backgroundColor: palette.accentSoft,
+      borderColor: palette.accent,
+    },
     chipText: { color: palette.text, fontSize: 12, fontWeight: "800" },
+    chipTextSelected: { color: palette.accent },
     action: {
+      alignItems: "center",
       alignSelf: "flex-start",
       backgroundColor: palette.accent,
-      borderRadius: 10,
+      borderColor: palette.accent,
+      borderRadius: 12,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 44,
       paddingHorizontal: 14,
       paddingVertical: 10,
     },
-    actionText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
+    actionText: {
+      color: palette.background,
+      fontSize: 13,
+      fontWeight: "800",
+    },
+    actionSecondary: { backgroundColor: "transparent" },
+    actionTextSecondary: { color: palette.accent },
+    actionDanger: {
+      backgroundColor: "transparent",
+      borderColor: palette.negative,
+    },
+    actionTextDanger: { color: palette.negative },
+    disabled: { opacity: 0.5 },
+    pressed: { opacity: 0.62 },
     endpoint: {
       borderTopColor: palette.border,
       borderTopWidth: 1,
@@ -552,14 +678,21 @@ const createStyles = (palette: TempoPalette) =>
     },
     codeInput: {
       borderColor: palette.border,
-      borderRadius: 8,
+      borderRadius: 10,
       borderWidth: 1,
       color: palette.text,
       letterSpacing: 2,
+      minHeight: 44,
       padding: 9,
-      width: 90,
+      width: 104,
     },
-    message: { color: palette.accent, fontSize: 14, fontWeight: "700" },
+    notice: {
+      backgroundColor: palette.accentSoft,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    message: { color: palette.accent, fontSize: 13, fontWeight: "700" },
     endpointError: {
       color: palette.text,
       fontSize: 13,

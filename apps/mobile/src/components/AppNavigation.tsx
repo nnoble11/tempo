@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { usePathname, useRouter } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 import type { TempoPalette } from "../theme";
 
@@ -15,36 +15,71 @@ const destinations = [
 
 export function AppNavigation({ palette }: { palette: TempoPalette }) {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const isActive = (href: (typeof destinations)[number]["href"]): boolean =>
+    href === "/"
+      ? pathname === "/" || pathname.startsWith("/briefings/")
+      : pathname === href;
+
   return (
-    <View style={styles.row}>
+    <ScrollView
+      accessibilityLabel="Tempo sections"
+      contentContainerStyle={[
+        styles.row,
+        { backgroundColor: palette.surface, borderColor: palette.border },
+      ]}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+    >
       {destinations.map((destination) => (
         <Pressable
-          accessibilityRole="button"
+          accessibilityRole="tab"
+          accessibilityState={{ selected: isActive(destination.href) }}
           key={destination.href}
           onPress={() => router.push(destination.href)}
-          style={[styles.link, { borderColor: palette.border }]}
+          style={({ pressed }) => [
+            styles.link,
+            isActive(destination.href) && {
+              backgroundColor: palette.accentSoft,
+            },
+            pressed && styles.pressed,
+          ]}
         >
-          <Text style={[styles.text, { color: palette.accent }]}>
+          <Text
+            style={[
+              styles.text,
+              {
+                color: isActive(destination.href)
+                  ? palette.accent
+                  : palette.textMuted,
+              },
+            ]}
+          >
             {destination.label}
           </Text>
         </Pressable>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    paddingVertical: 12,
+    alignItems: "center",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 2,
+    padding: 4,
   },
   link: {
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
+    alignItems: "center",
+    borderRadius: 12,
+    justifyContent: "center",
+    minHeight: 40,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
   },
   text: { fontSize: 12, fontWeight: "700" },
+  pressed: { opacity: 0.62 },
 });

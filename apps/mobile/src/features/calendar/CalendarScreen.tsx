@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +20,7 @@ import {
   fetchCalendarAvailability,
   syncCalendarAvailability,
 } from "./api";
+import { calendarErrorMessage } from "./calendar-errors";
 import { readDeviceCalendarAvailability } from "./device-calendar";
 
 const availabilityKey = ["calendar", "availability"] as const;
@@ -33,6 +35,7 @@ export function CalendarScreen() {
   });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [permissionBlocked, setPermissionBlocked] = useState(false);
 
   const connectAndSync = async (): Promise<void> => {
     setBusy(true);
@@ -40,11 +43,15 @@ export function CalendarScreen() {
     try {
       const local = await readDeviceCalendarAvailability();
       if (local.status === "denied") {
+        setPermissionBlocked(!local.canAskAgain);
         setMessage(
-          "Calendar permission was not granted. Tempo works normally without it.",
+          local.canAskAgain
+            ? "Calendar permission was not granted. Tempo works normally without it."
+            : "Calendar access is off. Allow Tempo full calendar access in iOS Settings, then retry.",
         );
         return;
       }
+      setPermissionBlocked(false);
       const connection = await connectDeviceCalendar();
       await syncCalendarAvailability(connection.id, local.availability);
       await client.invalidateQueries({ queryKey: availabilityKey });
@@ -52,7 +59,7 @@ export function CalendarScreen() {
         "Free/busy times synced. Event names and details stayed on this device.",
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not sync.");
+      setMessage(calendarErrorMessage(error, "Could not sync."));
     } finally {
       setBusy(false);
     }
@@ -67,9 +74,7 @@ export function CalendarScreen() {
       await client.invalidateQueries({ queryKey: availabilityKey });
       setMessage("Calendar suggestions disabled and busy times deleted.");
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Could not disconnect.",
-      );
+      setMessage(calendarErrorMessage(error, "Could not disconnect."));
     } finally {
       setBusy(false);
     }
@@ -84,6 +89,8 @@ export function CalendarScreen() {
   }
 
   const suggestion = query.data?.suggestion;
+  const connection = query.data?.connection ?? null;
+  const apiUnavailable = query.isError;
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -99,19 +106,22 @@ export function CalendarScreen() {
             your calendar.
           </Text>
           <Pressable
-            disabled={busy}
+            accessibilityRole="button"
+            disabled={busy || apiUnavailable}
             onPress={() => void connectAndSync()}
-            style={styles.action}
+            style={[styles.action, apiUnavailable && styles.disabled]}
           >
             <Text style={styles.actionText}>
               {busy
                 ? "Working…"
-                : query.data?.connection === null
-                  ? "Connect this iPhone"
-                  : "Refresh free/busy times"}
+                : apiUnavailable
+                  ? "Calendar service unavailable"
+                  : connection === null
+                    ? "Connect this iPhone"
+                    : "Refresh free/busy times"}
             </Text>
           </Pressable>
-          {query.data?.connection === null ? null : (
+          {connection === null ? null : (
             <Pressable
               disabled={busy}
               onPress={() => void disconnect()}
@@ -120,8 +130,44 @@ export function CalendarScreen() {
               <Text style={styles.secondaryText}>Disconnect and delete</Text>
             </Pressable>
           )}
+          {permissionBlocked ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
+              onPress={() =>
+                void Linking.openSettings().catch(() =>
+                  setMessage(
+                    "Open iOS Settings, choose Tempo, and allow full calendar access.",
+                  ),
+                )
+              }
+              style={styles.secondary}
+            >
+              <Text style={styles.secondaryText}>Open iOS Settings</Text>
+            </Pressable>
+          ) : null}
         </View>
-        {suggestion === null || suggestion === undefined ? (
+        {apiUnavailable ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.cardTitle}>Calendar could not load</Text>
+            <Text accessibilityRole="alert" style={styles.copy}>
+              {calendarErrorMessage(
+                query.error,
+                "Tempo could not load calendar availability.",
+              )}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              disabled={query.isFetching}
+              onPress={() => void query.refetch()}
+              style={styles.secondary}
+            >
+              <Text style={styles.secondaryText}>
+                {query.isFetching ? "Retrying…" : "Retry"}
+              </Text>
+            </Pressable>
+          </View>
+        ) : suggestion === null || suggestion === undefined ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>No suggestion right now</Text>
             <Text style={styles.copy}>
@@ -189,6 +235,14 @@ const createStyles = (palette: TempoPalette) =>
       gap: 12,
       padding: 18,
     },
+    errorCard: {
+      backgroundColor: palette.surface,
+      borderColor: palette.negative,
+      borderRadius: 18,
+      borderWidth: 1,
+      gap: 12,
+      padding: 18,
+    },
     cardTitle: {
       color: palette.text,
       fontSize: 21,
@@ -213,5 +267,6 @@ const createStyles = (palette: TempoPalette) =>
       paddingVertical: 10,
     },
     secondaryText: { color: palette.text, fontSize: 12, fontWeight: "800" },
+    disabled: { opacity: 0.55 },
     message: { color: palette.accent, fontSize: 14, fontWeight: "700" },
   });
