@@ -15,9 +15,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { darkPalette, lightPalette, type TempoPalette } from "../../theme";
 import { useBriefing } from "./hooks";
 import {
+  describeItemEvidenceSupport,
   formatBriefingDuration,
-  formatItemConfidence,
-  getItemConfidence,
+  formatItemEvidenceSupport,
+  getItemEvidenceSupport,
   uniqueItemCitations,
 } from "./today-utils";
 
@@ -94,9 +95,14 @@ export function BriefingDetailScreen() {
           {briefing.items.length === 1 ? "update" : "updates"} · one clear end
         </Text>
         {briefing.items.map((item) => {
-          const confidence = getItemConfidence(item);
+          const evidenceSupport = getItemEvidenceSupport(item);
+          const citations = uniqueItemCitations(item);
           return (
-            <View key={item.id} style={styles.card}>
+            <View
+              accessibilityLabel={`Briefing section ${item.position} of ${briefing.items.length}`}
+              key={item.id}
+              style={styles.section}
+            >
               <View style={styles.itemMeta}>
                 <Text style={styles.number}>
                   {String(item.position).padStart(2, "0")}
@@ -113,28 +119,35 @@ export function BriefingDetailScreen() {
               <Text style={styles.copy}>{item.whyItMatters}</Text>
               <Text style={styles.label}>WHAT CHANGED</Text>
               <Text style={styles.copy}>{item.whatChanged}</Text>
-              {confidence === null ? null : (
-                <>
-                  <Text style={styles.label}>CONFIDENCE</Text>
-                  <Text style={styles.copy}>
-                    {formatItemConfidence(confidence)}
+              <Text style={styles.label}>
+                {citations.length === 1 ? "SOURCE" : "SOURCES"}
+              </Text>
+              <View style={styles.sourceList}>
+                {citations.map((citation) => (
+                  <Pressable
+                    key={citation.citationId}
+                    accessibilityLabel={`Open ${citation.publisher}: ${citation.sourceTitle}`}
+                    accessibilityRole="link"
+                    onPress={() => void Linking.openURL(citation.canonicalUrl)}
+                    style={styles.source}
+                  >
+                    <Text style={styles.sourceText}>
+                      {citation.publisher} · {citation.sourceTitle}
+                    </Text>
+                    <Text style={styles.sourceArrow}>↗</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {evidenceSupport === null ? null : (
+                <View style={styles.evidenceNote}>
+                  <Text style={styles.evidenceTitle}>
+                    {formatItemEvidenceSupport(evidenceSupport)}
                   </Text>
-                </>
+                  <Text style={styles.evidenceCopy}>
+                    {describeItemEvidenceSupport(evidenceSupport)}
+                  </Text>
+                </View>
               )}
-              {uniqueItemCitations(item).map((citation) => (
-                <Pressable
-                  key={citation.citationId}
-                  accessibilityLabel={`Open ${citation.publisher}: ${citation.sourceTitle}`}
-                  accessibilityRole="link"
-                  onPress={() => void Linking.openURL(citation.canonicalUrl)}
-                  style={styles.source}
-                >
-                  <Text style={styles.sourceText}>
-                    {citation.publisher} · {citation.sourceTitle}
-                  </Text>
-                  <Text style={styles.sourceArrow}>↗</Text>
-                </Pressable>
-              ))}
             </View>
           );
         })}
@@ -149,9 +162,8 @@ const createStyles = (palette: TempoPalette) =>
     safeArea: { backgroundColor: palette.background, flex: 1 },
     content: {
       alignSelf: "center",
-      gap: 20,
       maxWidth: 720,
-      padding: 24,
+      paddingHorizontal: 24,
       paddingBottom: 60,
       width: "100%",
     },
@@ -165,8 +177,9 @@ const createStyles = (palette: TempoPalette) =>
     },
     stateTitle: {
       color: palette.text,
+      fontFamily: "Georgia",
       fontSize: 27,
-      fontWeight: "700",
+      fontWeight: "400",
       letterSpacing: -0.5,
       lineHeight: 34,
       textAlign: "center",
@@ -188,6 +201,7 @@ const createStyles = (palette: TempoPalette) =>
       alignSelf: "flex-start",
       justifyContent: "center",
       minHeight: 44,
+      marginTop: 8,
     },
     backText: { color: palette.accent, fontSize: 16, fontWeight: "700" },
     eyebrow: {
@@ -195,22 +209,30 @@ const createStyles = (palette: TempoPalette) =>
       fontSize: 12,
       fontWeight: "800",
       letterSpacing: 1.5,
+      marginTop: 30,
     },
     title: {
       color: palette.text,
+      fontFamily: "Georgia",
       fontSize: 30,
-      fontWeight: "700",
+      fontWeight: "400",
       letterSpacing: -0.6,
       lineHeight: 37,
+      marginTop: 12,
     },
-    meta: { color: palette.textMuted, fontSize: 15 },
-    card: {
-      backgroundColor: palette.surface,
-      borderColor: palette.border,
-      borderRadius: 20,
-      borderWidth: 1,
-      gap: 12,
-      padding: 20,
+    meta: {
+      borderBottomColor: palette.border,
+      borderBottomWidth: 1,
+      color: palette.textMuted,
+      fontSize: 15,
+      paddingBottom: 30,
+      paddingTop: 18,
+    },
+    section: {
+      borderBottomColor: palette.border,
+      borderBottomWidth: 1,
+      paddingBottom: 32,
+      paddingTop: 30,
     },
     itemMeta: {
       alignItems: "center",
@@ -225,17 +247,28 @@ const createStyles = (palette: TempoPalette) =>
     },
     headline: {
       color: palette.text,
+      fontFamily: "Georgia",
       fontSize: 23,
-      fontWeight: "700",
+      fontWeight: "400",
       lineHeight: 29,
+      marginTop: 16,
     },
-    copy: { color: palette.text, fontSize: 16, lineHeight: 24 },
+    copy: {
+      color: palette.text,
+      fontSize: 16,
+      lineHeight: 25,
+      marginTop: 10,
+    },
     label: {
       color: palette.textMuted,
       fontSize: 11,
       fontWeight: "800",
       letterSpacing: 1.2,
-      marginTop: 8,
+      marginTop: 24,
+    },
+    sourceList: {
+      borderBottomColor: palette.border,
+      borderBottomWidth: 1,
     },
     source: {
       alignItems: "center",
@@ -249,6 +282,23 @@ const createStyles = (palette: TempoPalette) =>
     },
     sourceText: { color: palette.accent, flex: 1, fontSize: 14 },
     sourceArrow: { color: palette.accent, fontSize: 18 },
+    evidenceNote: {
+      borderLeftColor: palette.textMuted,
+      borderLeftWidth: 2,
+      marginTop: 20,
+      paddingLeft: 12,
+    },
+    evidenceTitle: {
+      color: palette.text,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    evidenceCopy: {
+      color: palette.textMuted,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: 4,
+    },
     finished: {
       color: palette.textMuted,
       fontSize: 16,
@@ -258,7 +308,7 @@ const createStyles = (palette: TempoPalette) =>
     primaryButton: {
       alignItems: "center",
       backgroundColor: palette.accent,
-      borderRadius: 12,
+      borderRadius: 3,
       justifyContent: "center",
       minHeight: 46,
       paddingHorizontal: 18,
@@ -271,7 +321,7 @@ const createStyles = (palette: TempoPalette) =>
     secondaryButton: {
       alignItems: "center",
       borderColor: palette.border,
-      borderRadius: 12,
+      borderRadius: 3,
       borderWidth: 1,
       justifyContent: "center",
       minHeight: 46,

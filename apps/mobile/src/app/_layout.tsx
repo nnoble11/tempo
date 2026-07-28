@@ -127,7 +127,13 @@ function SessionNavigator() {
     profile.data?.user.onboardingCompletedAt !== undefined;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        animation: "fade",
+        contentStyle: { backgroundColor: palette.background },
+        headerShown: false,
+      }}
+    >
       <Stack.Protected guard={session === null}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>

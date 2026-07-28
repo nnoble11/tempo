@@ -181,7 +181,7 @@ export function SignInScreen() {
               ]}
             >
               {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={palette.background} />
               ) : (
                 <Text style={styles.primaryButtonText}>
                   {mode === "sign_in" ? "Open Tempo" : "Create my account"}
@@ -212,7 +212,7 @@ const createStyles = (palette: TempoPalette) =>
       flexGrow: 1,
       justifyContent: "center",
       paddingHorizontal: 24,
-      paddingVertical: 36,
+      paddingVertical: 48,
     },
     intro: {
       maxWidth: 480,
@@ -220,9 +220,9 @@ const createStyles = (palette: TempoPalette) =>
     },
     wordmark: {
       color: palette.accent,
-      fontSize: 38,
-      fontWeight: "800",
-      letterSpacing: -2,
+      fontSize: 28,
+      fontWeight: "700",
+      letterSpacing: -1.2,
     },
     eyebrow: {
       color: palette.accent,
@@ -232,16 +232,18 @@ const createStyles = (palette: TempoPalette) =>
     },
     title: {
       color: palette.text,
-      fontSize: 34,
-      fontWeight: "700",
-      letterSpacing: -1.2,
-      lineHeight: 39,
-      marginTop: 18,
+      fontFamily: "Georgia",
+      fontSize: 38,
+      fontWeight: "400",
+      letterSpacing: -1.1,
+      lineHeight: 44,
+      marginTop: 40,
     },
     stateTitle: {
       color: palette.text,
+      fontFamily: "Georgia",
       fontSize: 32,
-      fontWeight: "700",
+      fontWeight: "400",
       letterSpacing: -1,
       lineHeight: 38,
       marginTop: 18,
@@ -256,28 +258,28 @@ const createStyles = (palette: TempoPalette) =>
     form: {
       backgroundColor: palette.surface,
       borderColor: palette.border,
-      borderRadius: 22,
+      borderRadius: 2,
       borderWidth: 1,
-      marginTop: 28,
+      marginTop: 36,
       maxWidth: 480,
-      padding: 22,
+      padding: 24,
       width: "100%",
     },
     modeRow: {
-      backgroundColor: palette.surfaceMuted,
-      borderRadius: 12,
+      borderBottomColor: palette.border,
+      borderBottomWidth: 1,
       flexDirection: "row",
-      marginBottom: 22,
-      padding: 3,
+      marginBottom: 24,
     },
     modeButton: {
       alignItems: "center",
-      borderRadius: 10,
+      borderBottomColor: "transparent",
+      borderBottomWidth: 2,
       flex: 1,
-      paddingVertical: 10,
+      paddingVertical: 12,
     },
     modeButtonSelected: {
-      backgroundColor: palette.surface,
+      borderBottomColor: palette.accent,
     },
     modeText: {
       color: palette.textMuted,
@@ -298,7 +300,7 @@ const createStyles = (palette: TempoPalette) =>
     input: {
       backgroundColor: palette.background,
       borderColor: palette.border,
-      borderRadius: 12,
+      borderRadius: 2,
       borderWidth: 1,
       color: palette.text,
       fontSize: 16,
@@ -315,7 +317,7 @@ const createStyles = (palette: TempoPalette) =>
     primaryButton: {
       alignItems: "center",
       backgroundColor: palette.accent,
-      borderRadius: 14,
+      borderRadius: 2,
       minHeight: 50,
       justifyContent: "center",
       marginTop: 20,
@@ -335,8 +337,7 @@ const createStyles = (palette: TempoPalette) =>
       fontSize: 11,
       lineHeight: 17,
       marginTop: 24,
-      maxWidth: 420,
-      textAlign: "center",
+      maxWidth: 480,
       width: "100%",
     },
     stateScreen: {

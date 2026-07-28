@@ -271,7 +271,7 @@ export function OnboardingScreen() {
           ]}
         >
           {completion.isPending ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={palette.background} />
           ) : (
             <Text style={styles.primaryButtonText}>
               Build my daily briefing
@@ -338,10 +338,11 @@ const createStyles = (palette: TempoPalette) =>
     },
     title: {
       color: palette.text,
-      fontSize: 31,
-      fontWeight: "700",
-      letterSpacing: -1,
-      lineHeight: 37,
+      fontFamily: "Georgia",
+      fontSize: 34,
+      fontWeight: "400",
+      letterSpacing: -0.9,
+      lineHeight: 40,
       marginTop: 10,
       maxWidth: 290,
     },
@@ -363,13 +364,11 @@ const createStyles = (palette: TempoPalette) =>
       fontSize: 12,
     },
     section: {
-      backgroundColor: palette.surface,
-      borderColor: palette.border,
-      borderRadius: 20,
-      borderWidth: 1,
+      borderTopColor: palette.border,
+      borderTopWidth: 1,
       maxWidth: 680,
-      marginBottom: 16,
-      padding: 20,
+      paddingBottom: 28,
+      paddingTop: 24,
       width: "100%",
     },
     sectionNumber: {
@@ -380,8 +379,9 @@ const createStyles = (palette: TempoPalette) =>
     },
     sectionTitle: {
       color: palette.text,
+      fontFamily: "Georgia",
       fontSize: 21,
-      fontWeight: "700",
+      fontWeight: "400",
       lineHeight: 27,
       marginBottom: 16,
       marginTop: 8,
@@ -397,9 +397,9 @@ const createStyles = (palette: TempoPalette) =>
       gap: 8,
     },
     option: {
-      backgroundColor: palette.surfaceMuted,
+      backgroundColor: palette.surface,
       borderColor: palette.border,
-      borderRadius: 12,
+      borderRadius: 2,
       borderWidth: 1,
       minHeight: 44,
       paddingHorizontal: 13,
@@ -439,7 +439,7 @@ const createStyles = (palette: TempoPalette) =>
     customInput: {
       backgroundColor: palette.background,
       borderColor: palette.border,
-      borderRadius: 12,
+      borderRadius: 2,
       borderWidth: 1,
       color: palette.text,
       flex: 1,
@@ -451,7 +451,7 @@ const createStyles = (palette: TempoPalette) =>
     addButton: {
       alignItems: "center",
       backgroundColor: palette.accent,
-      borderRadius: 12,
+      borderRadius: 2,
       justifyContent: "center",
       minHeight: 48,
       width: 46,
@@ -464,7 +464,9 @@ const createStyles = (palette: TempoPalette) =>
       alignItems: "center",
       alignSelf: "flex-start",
       backgroundColor: palette.accentSoft,
-      borderRadius: 999,
+      borderColor: palette.border,
+      borderRadius: 2,
+      borderWidth: 1,
       flexDirection: "row",
       gap: 7,
       marginTop: 10,
@@ -510,7 +512,7 @@ const createStyles = (palette: TempoPalette) =>
     primaryButton: {
       alignItems: "center",
       backgroundColor: palette.accent,
-      borderRadius: 16,
+      borderRadius: 2,
       justifyContent: "center",
       maxWidth: 680,
       minHeight: 54,

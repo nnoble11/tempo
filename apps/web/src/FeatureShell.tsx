@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { AppNavigation } from "./AppNavigation";
@@ -17,10 +18,10 @@ export function FeatureShell({
 }) {
   return (
     <main className="shell featureShell" id="main-content">
-      <header className="topbar">
-        <a className="wordmark" href="/">
+      <header className="topbar siteHeader">
+        <Link className="wordmark" href="/">
           tempo
-        </a>
+        </Link>
         <AppNavigation />
       </header>
       <section aria-labelledby="feature-title" className="featureHero">

@@ -23,7 +23,8 @@ export const getTodayViewState = (input: {
 };
 
 export const formatBriefingDuration = (seconds: number): string => {
-  const minutes = Math.max(1, Math.ceil(seconds / 60));
+  if (seconds < 60) return "<1 min";
+  const minutes = Math.ceil(seconds / 60);
   return `${minutes} min`;
 };
 
@@ -37,27 +38,40 @@ export const uniqueItemCitations = (
   ).values(),
 ];
 
-export type ItemConfidence = {
+export type ItemEvidenceSupport = {
   /** The item's weakest grounded claim confidence, in [0, 1]. */
   value: number;
-  label: "High" | "Moderate" | "Low";
+  label: "Strong" | "Mixed" | "Limited";
 };
 
 /**
- * Summarizes an item's claim confidences for display. Uses the minimum so a
- * single weakly-supported claim cannot hide behind stronger ones. Returns null
- * for items without grounded claims.
+ * Summarizes how well the cited evidence supports an item's factual claims.
+ * Uses the minimum so a single weakly-supported claim cannot hide behind
+ * stronger ones. Returns null for items without grounded claims.
  */
-export const getItemConfidence = (
+export const getItemEvidenceSupport = (
   item: CanonicalBriefingItem,
-): ItemConfidence | null => {
+): ItemEvidenceSupport | null => {
   if (item.claims.length === 0) {
     return null;
   }
   const value = Math.min(...item.claims.map((claim) => claim.confidence));
-  const label = value >= 0.75 ? "High" : value >= 0.5 ? "Moderate" : "Low";
+  const label = value >= 0.75 ? "Strong" : value >= 0.5 ? "Mixed" : "Limited";
   return { value, label };
 };
 
-export const formatItemConfidence = (confidence: ItemConfidence): string =>
-  `${confidence.label} · ${Math.round(confidence.value * 100)}%`;
+export const formatItemEvidenceSupport = (
+  support: ItemEvidenceSupport,
+): string => `${support.label} source support`;
+
+export const describeItemEvidenceSupport = (
+  support: ItemEvidenceSupport,
+): string => {
+  const claimSummary =
+    support.label === "Strong"
+      ? "Every factual claim is strongly supported by the cited sources."
+      : support.label === "Mixed"
+        ? "At least one factual claim has only moderate support from the cited sources."
+        : "At least one factual claim has limited support from the cited sources.";
+  return `${claimSummary} This is an evidence check, not a prediction or guarantee.`;
+};

@@ -28,9 +28,10 @@ import {
 import { darkPalette, lightPalette, type TempoPalette } from "../../theme";
 import { useRecordBriefingInteraction, useTodayBriefing } from "./hooks";
 import {
+  describeItemEvidenceSupport,
   formatBriefingDuration,
-  formatItemConfidence,
-  getItemConfidence,
+  formatItemEvidenceSupport,
+  getItemEvidenceSupport,
   getTodayViewState,
   uniqueItemCitations,
 } from "./today-utils";
@@ -45,7 +46,7 @@ type BriefingInteractionEvent =
   | "dismissed"
   | "deferred";
 
-type ItemCardProps = {
+type BriefingSectionProps = {
   briefing: CanonicalBriefing;
   item: CanonicalBriefingItem;
   expanded: boolean;
@@ -72,7 +73,7 @@ const dateLabel = (value: string): string =>
     day: "numeric",
   }).format(new Date(value));
 
-function ItemCard({
+function BriefingSection({
   briefing,
   item,
   expanded,
@@ -85,15 +86,15 @@ function ItemCard({
   onSave,
   onDefer,
   onOpenCitation,
-}: ItemCardProps) {
+}: BriefingSectionProps) {
   const styles = useMemo(() => createStyles(palette), [palette]);
   const citations = uniqueItemCitations(item);
-  const confidence = getItemConfidence(item);
+  const evidenceSupport = getItemEvidenceSupport(item);
 
   return (
     <View
-      style={styles.itemCard}
-      accessibilityLabel={`Briefing item ${item.position} of ${briefing.items.length}`}
+      style={styles.itemSection}
+      accessibilityLabel={`Briefing section ${item.position} of ${briefing.items.length}`}
     >
       <View style={styles.itemMeta}>
         <Text style={styles.itemNumber}>
@@ -120,30 +121,18 @@ function ItemCard({
         ]}
       >
         <Text style={styles.expandButtonText}>
-          {expanded ? "Show less" : "Why this matters"}
+          {expanded ? "Close context" : "Context, sources & evidence"}
         </Text>
         <Text style={styles.expandSymbol}>{expanded ? "−" : "+"}</Text>
       </Pressable>
 
       {expanded ? (
         <View style={styles.detailArea}>
-          <Text style={styles.detailLabel}>WHY IT MATTERS TO YOU</Text>
+          <Text style={styles.detailLabel}>WHY IT MATTERS</Text>
           <Text style={styles.detailText}>{item.whyItMatters}</Text>
 
           <Text style={styles.detailLabel}>WHAT CHANGED</Text>
           <Text style={styles.detailText}>{item.whatChanged}</Text>
-
-          {confidence === null ? null : (
-            <>
-              <Text style={styles.detailLabel}>CONFIDENCE</Text>
-              <Text
-                accessibilityLabel={`Confidence ${formatItemConfidence(confidence)}`}
-                style={styles.detailText}
-              >
-                {formatItemConfidence(confidence)}
-              </Text>
-            </>
-          )}
 
           <Text style={styles.detailLabel}>
             {citations.length === 1 ? "SOURCE" : "SOURCES"}
@@ -173,6 +162,17 @@ function ItemCard({
               </Pressable>
             ))}
           </View>
+
+          {evidenceSupport === null ? null : (
+            <View style={styles.evidenceNote}>
+              <Text style={styles.evidenceTitle}>
+                {formatItemEvidenceSupport(evidenceSupport)}
+              </Text>
+              <Text style={styles.evidenceCopy}>
+                {describeItemEvidenceSupport(evidenceSupport)}
+              </Text>
+            </View>
+          )}
         </View>
       ) : null}
 
@@ -561,7 +561,7 @@ export function TodayScreen() {
             const deferred =
               state?.deferredAt !== null && state?.deferredAt !== undefined;
             return (
-              <ItemCard
+              <BriefingSection
                 key={item.id}
                 briefing={briefing}
                 item={item}
@@ -618,11 +618,13 @@ const createStyles = (palette: TempoPalette) =>
       width: "100%",
     },
     header: {
-      alignItems: "flex-start",
+      alignItems: "flex-end",
+      borderBottomColor: palette.border,
+      borderBottomWidth: 1,
       flexDirection: "row",
       justifyContent: "space-between",
-      paddingBottom: 20,
-      paddingTop: 20,
+      paddingBottom: 18,
+      paddingTop: 24,
     },
     wordmark: {
       color: palette.text,
@@ -637,40 +639,35 @@ const createStyles = (palette: TempoPalette) =>
       marginTop: 3,
     },
     durationPill: {
-      alignItems: "center",
-      backgroundColor: palette.accentSoft,
-      borderRadius: 18,
-      minWidth: 70,
-      paddingHorizontal: 13,
-      paddingVertical: 9,
+      alignItems: "flex-end",
+      paddingBottom: 2,
     },
     durationValue: {
-      color: palette.accent,
-      fontSize: 16,
+      color: palette.text,
+      fontSize: 15,
       fontWeight: "700",
     },
     durationLabel: {
-      color: palette.accent,
+      color: palette.textMuted,
       fontSize: 8,
       fontWeight: "700",
       letterSpacing: 1.2,
       marginTop: 1,
     },
     overviewCard: {
-      backgroundColor: palette.surface,
-      borderColor: palette.border,
-      borderRadius: 20,
-      borderWidth: 1,
-      padding: 22,
+      borderBottomColor: palette.border,
+      borderBottomWidth: 1,
+      paddingBottom: 30,
+      paddingTop: 42,
     },
     calendarSuggestion: {
-      backgroundColor: palette.accentSoft,
-      borderColor: palette.accent,
-      borderRadius: 16,
-      borderWidth: 1,
+      borderBottomColor: palette.border,
+      borderLeftColor: palette.text,
+      borderLeftWidth: 3,
+      borderBottomWidth: 1,
       gap: 8,
-      marginTop: 16,
-      padding: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 18,
     },
     calendarSuggestionTitle: {
       color: palette.text,
@@ -685,8 +682,9 @@ const createStyles = (palette: TempoPalette) =>
     },
     overview: {
       color: palette.text,
+      fontFamily: "Georgia",
       fontSize: 23,
-      fontWeight: "600",
+      fontWeight: "400",
       letterSpacing: -0.5,
       lineHeight: 30,
       marginTop: 12,
@@ -697,20 +695,16 @@ const createStyles = (palette: TempoPalette) =>
       marginTop: 16,
     },
     itemList: {
-      gap: 16,
-      marginTop: 18,
+      marginTop: 0,
     },
     noticeBanner: {
       alignItems: "center",
-      backgroundColor: palette.accentSoft,
-      borderColor: palette.accent,
-      borderRadius: 12,
-      borderWidth: 1,
+      borderBottomColor: palette.border,
+      borderBottomWidth: 1,
       flexDirection: "row",
       gap: 12,
-      marginTop: 18,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
+      paddingHorizontal: 2,
+      paddingVertical: 14,
     },
     noticeText: {
       color: palette.text,
@@ -723,12 +717,11 @@ const createStyles = (palette: TempoPalette) =>
       fontSize: 12,
       fontWeight: "800",
     },
-    itemCard: {
-      backgroundColor: palette.surface,
-      borderColor: palette.border,
-      borderRadius: 20,
-      borderWidth: 1,
-      padding: 20,
+    itemSection: {
+      borderBottomColor: palette.border,
+      borderBottomWidth: 1,
+      paddingBottom: 28,
+      paddingTop: 30,
     },
     itemMeta: {
       alignItems: "center",
@@ -737,7 +730,7 @@ const createStyles = (palette: TempoPalette) =>
       marginBottom: 16,
     },
     itemNumber: {
-      color: palette.accent,
+      color: palette.text,
       fontSize: 11,
       fontWeight: "800",
       letterSpacing: 1.4,
@@ -749,27 +742,26 @@ const createStyles = (palette: TempoPalette) =>
     },
     headline: {
       color: palette.text,
+      fontFamily: "Georgia",
       fontSize: 21,
-      fontWeight: "700",
+      fontWeight: "400",
       letterSpacing: -0.35,
       lineHeight: 27,
     },
     takeaway: {
-      color: palette.textMuted,
-      fontSize: 15,
-      lineHeight: 23,
-      marginTop: 10,
+      color: palette.text,
+      fontSize: 16,
+      lineHeight: 25,
+      marginTop: 12,
     },
     expandButton: {
       alignItems: "center",
-      borderBottomColor: palette.border,
       borderTopColor: palette.border,
-      borderBottomWidth: 1,
       borderTopWidth: 1,
       flexDirection: "row",
       justifyContent: "space-between",
-      marginTop: 18,
-      paddingVertical: 14,
+      marginTop: 20,
+      paddingVertical: 15,
     },
     expandButtonText: {
       color: palette.accent,
@@ -782,7 +774,9 @@ const createStyles = (palette: TempoPalette) =>
       fontWeight: "400",
     },
     detailArea: {
-      paddingTop: 18,
+      borderTopColor: palette.border,
+      borderTopWidth: 1,
+      paddingTop: 4,
     },
     detailLabel: {
       color: palette.textMuted,
@@ -798,15 +792,16 @@ const createStyles = (palette: TempoPalette) =>
       lineHeight: 21,
     },
     citationList: {
-      gap: 8,
+      borderBottomColor: palette.border,
+      borderBottomWidth: 1,
     },
     citation: {
       alignItems: "center",
-      backgroundColor: palette.surfaceMuted,
-      borderRadius: 12,
+      borderTopColor: palette.border,
+      borderTopWidth: 1,
       flexDirection: "row",
-      paddingHorizontal: 13,
-      paddingVertical: 11,
+      minHeight: 50,
+      paddingVertical: 10,
     },
     citationCopy: {
       flex: 1,
@@ -822,31 +817,43 @@ const createStyles = (palette: TempoPalette) =>
       marginTop: 2,
     },
     citationArrow: {
-      color: palette.accent,
+      color: palette.textMuted,
       fontSize: 15,
       marginLeft: 10,
+    },
+    evidenceNote: {
+      borderLeftColor: palette.textMuted,
+      borderLeftWidth: 2,
+      marginTop: 18,
+      paddingLeft: 12,
+    },
+    evidenceTitle: {
+      color: palette.text,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    evidenceCopy: {
+      color: palette.textMuted,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: 4,
     },
     actionRow: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
-      marginTop: 18,
+      marginTop: 16,
     },
     actionButton: {
       alignItems: "center",
-      borderColor: palette.border,
-      borderRadius: 12,
-      borderWidth: 1,
-      flexBasis: "46%",
-      flexGrow: 1,
+      borderRightColor: palette.border,
+      borderRightWidth: 1,
       justifyContent: "center",
       minHeight: 44,
-      paddingHorizontal: 11,
-      paddingVertical: 9,
+      paddingHorizontal: 13,
+      paddingVertical: 8,
     },
     actionButtonSelected: {
-      backgroundColor: palette.accentSoft,
-      borderColor: palette.accent,
+      backgroundColor: palette.surfaceMuted,
     },
     actionText: {
       color: palette.textMuted,
@@ -873,8 +880,9 @@ const createStyles = (palette: TempoPalette) =>
     },
     finishedTitle: {
       color: palette.text,
+      fontFamily: "Georgia",
       fontSize: 20,
-      fontWeight: "700",
+      fontWeight: "400",
     },
     finishedCopy: {
       color: palette.textMuted,
@@ -898,8 +906,9 @@ const createStyles = (palette: TempoPalette) =>
     },
     stateTitle: {
       color: palette.text,
+      fontFamily: "Georgia",
       fontSize: 27,
-      fontWeight: "700",
+      fontWeight: "400",
       letterSpacing: -0.6,
       marginTop: 16,
       textAlign: "center",
@@ -914,7 +923,7 @@ const createStyles = (palette: TempoPalette) =>
     },
     primaryButton: {
       backgroundColor: palette.accent,
-      borderRadius: 14,
+      borderRadius: 3,
       minHeight: 48,
       marginTop: 24,
       paddingHorizontal: 20,
